@@ -1,6 +1,8 @@
 import tkinter as tk
 
+from gui.AnnotationFrame import AnnotationFrame
 from gui.ECGFrame import ECGFrame
+from gui.SettingsFrame import SettingsFrame
 
 
 class MainWindow:
@@ -9,12 +11,18 @@ class MainWindow:
 
         self.master.state('zoomed')
         self.master.title("ECG frequency analysis")
-
         self.__create_menu()
 
-        self.frame_ecg = ECGFrame(self.master)
-        self.frame_ecg.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.frame_annotations = AnnotationFrame(self.master, width=250)
+        self.frame_annotations.pack_propagate(False)
+        self.frame_annotations.pack(side=tk.RIGHT, fill=tk.Y)
 
+        self.frame_buttons = SettingsFrame(self.master, height=80)
+        self.frame_buttons.pack_propagate(False)
+        self.frame_buttons.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self.frame_ecg = ECGFrame(self.master)
+        self.frame_ecg.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
     def __create_menu(self):
         menu_bar=tk.Menu(self.master)
