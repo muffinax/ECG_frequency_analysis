@@ -1,18 +1,19 @@
 import tkinter as tk
+import sys
+import os
+from gui import MainWindow
 
-from gui.MainWindow import MainWindow
+def main() -> None:
+    root = tk.Tk()
+    app = MainWindow(master=root)
 
-
-def main():
-    root=tk.Tk()
-    app=MainWindow(root)
-
-    test_time = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
-    test_amplitude = [0.0, 0.2, 1.5, -0.4, 0.1, 0.0]
-    app.frame_ecg.update_chart(test_time, test_amplitude)
+    if len(sys.argv) > 1:
+        target_file = sys.argv[1]
+        if os.path.exists(target_file):
+            app.file_manager.open_file(target_file)
+            app.update()
 
     root.mainloop()
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
     main()

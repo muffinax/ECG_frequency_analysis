@@ -1,0 +1,13 @@
+Installation Complete! 
+
+QUICK START GUIDE:
+
+1. Launching the App: 
+You can launch the application from the Start Menu shortcut.
+
+2. Opening Files:
+* Click "File -> Open" inside the application to browse for your WFDB records.
+* Alternatively, simply double-click any .hea, .dat or .atr file directly in Windows File Explorer to auto-load the signal.
+
+3. Notes on WFDB Files:
+Please ensure that both the header file (.hea) and the signal data file (.dat) are located in the same directory. The application requires both files to correctly interpret the ECG frequency and amplitude.
