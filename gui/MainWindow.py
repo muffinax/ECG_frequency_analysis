@@ -6,20 +6,20 @@ from gui.ECGFrame import ECGFrame
 from gui.SettingsFrame import SettingsFrame
 
 from file_manager import FileManager, ELeadType
+import localisation
 
 
 class MainWindow:
     def __init__(self, master: tk.Tk) -> None:
         self.master = master
 
-        # Initialize the file manager here so the whole app can access it
         self.file_manager = FileManager()
 
         self.master.state('zoomed')
         self.master.title("ECG frequency analysis")
         self.__create_menu()
 
-        self.frame_annotations = AnnotationFrame(master=self.master, width=300)
+        self.frame_annotations = AnnotationFrame(master=self.master, width=600)
         self.frame_annotations.pack_propagate(False)
         self.frame_annotations.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -30,23 +30,24 @@ class MainWindow:
         self.frame_ecg = ECGFrame(master=self.master)
         self.frame_ecg.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
+        self.master.protocol("WM_DELETE_WINDOW", self.__on_closing)
+
     def __create_menu(self) -> None:
         menu_bar = tk.Menu(master=self.master)
 
         menu_file = tk.Menu(master=menu_bar, tearoff=0)
-        menu_bar.add_cascade(label='File', menu=menu_file)
+        menu_bar.add_cascade(label=localisation.name_resolver.get("menubar_file"), menu=menu_file)
 
-        # HOOKED UP HERE: command=self.open_file_dialog
-        menu_file.add_command(label='Open..', command=self.open_file_dialog)
+        menu_file.add_command(label=localisation.name_resolver.get("menubar_file_open"), command=self.open_file_dialog)
 
-        menu_file.add_command(label='Save', command=None)
-        menu_file.add_command(label='Save as...', command=None)
+        menu_file.add_command(label=localisation.name_resolver.get("menubar_file_save"), command=None)
+        menu_file.add_command(label=localisation.name_resolver.get("menubar_file_save_as"), command=None)
         menu_file.add_separator()
-        menu_file.add_command(label='Exit', command=self.master.destroy)
+        menu_file.add_command(label=localisation.name_resolver.get("menubar_file_exit"), command=self.__on_closing)
 
         menu_analysis = tk.Menu(master=menu_bar, tearoff=0)
-        menu_bar.add_cascade(label='Analysis', menu=menu_analysis)
-        menu_analysis.add_command(label='perform an ECG analysis', command=None)
+        menu_bar.add_cascade(label=localisation.name_resolver.get("menubar_analysis"), menu=menu_analysis)
+        menu_analysis.add_command(label=localisation.name_resolver.get("menubar_analysis_perform_analysis"), command=None)
 
         self.master.config(menu=menu_bar)
 
@@ -55,22 +56,29 @@ class MainWindow:
             self.file_manager.open_file_system_gui()
 
             if self.file_manager.opened() and self.file_manager.signals:
-                # 1. Update ECG Chart
-                first_available_lead: ELeadType = list(self.file_manager.signals.keys())[0]
-                time_axis = self.file_manager.get_time_axis()
-                amplitude = self.file_manager.get_signal(channel=first_available_lead)
-                self.frame_ecg.update_chart(t=time_axis, a=amplitude)
-
-                # 2. Update Annotations Table
-                annotations_list = self.file_manager.get_annotations()
-                fs = self.file_manager.sampling_frequency
-                self.frame_annotations.update_annotations(
-                    annotations=annotations_list,
-                    sample_rate=fs
-                )
-
-                # 3. Update Window Title
-                self.master.title(f"ECG frequency analysis - Lead: {first_available_lead.to_string()}")
+                self.update()
 
         except Exception as error_obj:
-            messagebox.showerror(title="Error", message=f"Could not load file:\n{str(object=error_obj)}")
+            messagebox.showerror(
+                title=localisation.name_resolver.get("messagebox_error"),
+                message=f"{localisation.name_resolver.get("messagebox_could_not_read_file")}:\n{str(object=error_obj)}"
+            )
+
+    def update(self):
+        first_available_lead: ELeadType = list(self.file_manager.signals.keys())[0]
+        time_axis = self.file_manager.get_time_axis()
+        amplitude = self.file_manager.get_signal(channel=first_available_lead)
+        self.frame_ecg.update_chart(t=time_axis, a=amplitude)
+
+        annotations_list = self.file_manager.get_annotations()
+        fs = self.file_manager.sampling_frequency
+        self.frame_annotations.update_annotations(
+            annotations=annotations_list,
+            sample_rate=fs
+        )
+
+        self.master.title(f"ECG frequency analysis - Lead: {first_available_lead.to_string()}")
+
+    def __on_closing(self):
+        self.master.quit()  # Stops mainloop
+        self.master.destroy()  # Destroys widgets

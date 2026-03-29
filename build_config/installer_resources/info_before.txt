@@ -1,0 +1,6 @@
+Welcome to the ECG Frequency Analysis Tool!
+
+This application is designed to load, visualize, and analyze ECG records.
+
+INSTALLATION NOTES:
+This installer will automatically associate .hea, .dat and .atr files with the ECG Analyzer. Once installed, you can simply double-click any patient record to open it directly in the application.
