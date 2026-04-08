@@ -64,6 +64,12 @@ Root: HKA; Subkey: "Software\Classes\ECGAnalyzer.atr"; ValueType: string; ValueN
 Root: HKA; Subkey: "Software\Classes\ECGAnalyzer.atr\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
 Root: HKA; Subkey: "Software\Classes\ECGAnalyzer.atr\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 
+; -- 4. European Data Format File (.edf) --
+Root: HKA; Subkey: "Software\Classes\.edf\OpenWithProgids"; ValueType: string; ValueName: "ECGAnalyzer.edf"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\Classes\ECGAnalyzer.edf"; ValueType: string; ValueName: ""; ValueData: "European Data Format File"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\ECGAnalyzer.edf\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKA; Subkey: "Software\Classes\ECGAnalyzer.edf\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon

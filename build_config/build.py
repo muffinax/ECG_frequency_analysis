@@ -12,7 +12,7 @@ if sys.platform != "win32":
 # =====================================================================
 # App specification
 APP_NAME: str = "ECG Analyzer"
-VERSION: str = "0.1.1"
+VERSION: str = "0.1.3"
 AUTHOR: str = "Marta Witkowska, Filip Romanowski, Aleksander Dziągwa, Kacper Bytner, Wojciech Biskup"
 DESCRIPTION: str = "ECG Frequency Analysis Tool"
 EXECUTABLE_NAME: str = "ecg_analyzer.exe"
@@ -30,7 +30,7 @@ RUNTIME_RESOURCES_DIR: str = os.path.join(ROOT_DIR, "resources")  # bundled reso
 # Build specification for .exe
 BUILD_EXE_OPTIONS: dict = {
     "packages": ["tkinter"],
-    "include_files": [(RUNTIME_RESOURCES_DIR, "resources")] if os.path.exists(path=RUNTIME_RESOURCES_DIR) else [],
+    "include_files": [(RUNTIME_RESOURCES_DIR, "resources")] if os.path.exists(RUNTIME_RESOURCES_DIR) else [],
     "excludes": [
         "PyQt5", "PyQt6", "PySide2", "PySide6",
         "setuptools", "wheel", "_distutils_hack", "pip",

@@ -42,8 +42,9 @@ class EAnnotationType(Enum):
     MEASUREMENT_ANNOTATION = "="                       # adnotacja pomiarowa
     COMMENT_ANNOTATION = '"'                           # komentarz
     LINK_TO_EXTERNAL_DATA = "@"                        # odnośnik do danych zewnętrznych
-    CUSTOM = "CUS"                                  # adnotacja wlasna
-    UNKNOWN = "UNK"                                # nieznany typ adnotacji
+    CUSTOM = "CUS"                                     # adnotacja wlasna
+    EDF = "EDF"                                        # import z formatu EDF
+    UNKNOWN = "UNK"                                    # nieznany typ adnotacji
 
     @classmethod
     def from_string(cls, string_value: str) -> "EAnnotationType":
