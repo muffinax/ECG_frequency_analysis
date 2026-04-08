@@ -46,9 +46,13 @@
 
     "frame_annotationframe_table_label": "Adnotacje",
     "frame_annotationframe_table_time_label": "Czas [s]",
+    "frame_annotationframe_table_amplitude_label": "Amplituda [mV]",
     "frame_annotationframe_table_type_label": "Symbol",
     "frame_annotationframe_table_type_verbose_label": "Typ",
     "frame_annotationframe_table_note_label": "Uwagi",
+
+    "main_title": "Analiza częstotliwościowa EKG",
+    "parameters_title": "Parametry",
 
     "menubar_file": "Plik",
     "menubar_file_open": "Otwórz",
@@ -57,6 +61,20 @@
     "menubar_file_exit": "Wyjdź",
     "menubar_analysis": "Analiza",
     "menubar_analysis_perform_analysis": "Dokonaj analizy EKG",
+    "menubar_analysis_parameters": "Parametry",
+    "menubar_help": "Pomoc",
+    "menubar_help_keys": "Przyciski",
+
+    "ECG_chart_title": "EKG Sygnał - ",
+
+    "parameters_save_button": "Zastosuj",
+    "parameters_window_frequency_label": "Częstotliwość: ",
+    "parameters_fragment_window_width_label": "Wielkość okna: ",
+    "parameters_window_overlay_label": "Wielkość ramki: ",
+    "parameters_window_start_label": "Miejsce startowe: ",
+    "parameters_window_time_label": "Czas: ",
+
+    "parameters_window_go_button": "Idź",
 
     "messagebox_error": "Błąd",
     "messagebox_could_not_read_file": "Nie można wczytać pliku"
