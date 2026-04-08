@@ -5,7 +5,6 @@ from datetime import datetime, time, date
 from typing import TYPE_CHECKING
 
 from .base_ecg_reader import BaseECGReader
-from .e_lead_type import ELeadType
 from .e_annotation_type import EAnnotationType
 from .annotation import Annotation
 from .input_manager_exception import InputManagerException
@@ -52,17 +51,16 @@ class WFDBReader(BaseECGReader):
             record_units: list[str] = getattr(wfdb_record, "units", ["mV"] * len(wfdb_record.sig_name))
 
             for index, channel_name in enumerate(wfdb_record.sig_name):
-                lead_type: ELeadType = ELeadType.from_string(channel_name)
+                lead_type: str = channel_name
                 channel_data: np.ndarray = wfdb_record.p_signal[:, index]
                 channel_unit: str = record_units[index].strip().lower() if record_units[index] else "mv"
 
-                # Convert to mV if necessary
                 if channel_unit == "v":
                     channel_data = channel_data * 1000.0
                 elif channel_unit == "uv":
                     channel_data = channel_data / 1000.0
                 elif channel_unit == "u":
-                    channel_data = channel_data / 1000.0  # sometimes microvolts are just labeled "u"
+                    channel_data = channel_data / 1000.0
 
                 file_manager.signals[lead_type] = channel_data
 
@@ -82,11 +80,10 @@ class WFDBReader(BaseECGReader):
                                                                                    index_value] is not None else ""
                     raw_channel_index: int = wfdb_annotation.chan[index_value]
 
-                    assigned_lead_type: ELeadType | None = None
+                    assigned_lead_type: str | None = None
                     if raw_channel_index < len(wfdb_record.sig_name):
-                        assigned_lead_type = ELeadType.from_string(wfdb_record.sig_name[raw_channel_index])
+                        assigned_lead_type = wfdb_record.sig_name[raw_channel_index]
 
-                    # Safe extraction of advanced fields
                     parsed_subtype: int = int(subtype_array[index_value]) if subtype_array is not None else 0
                     parsed_numeric: int = int(numeric_array[index_value]) if numeric_array is not None else 0
                     parsed_custom_label: str | None = custom_labels_array[
@@ -107,7 +104,10 @@ class WFDBReader(BaseECGReader):
                 file_manager.wfdb_annotation = None
 
         except Exception as exception_object:
+            file_manager.clear()
             raise InputManagerException(
                 error_id="wfdb_read_error",
                 error_description=f"Failed to read WFDB file: {str(exception_object)}"
             )
+
+        file_manager.b_opened = True

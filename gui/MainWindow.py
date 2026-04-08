@@ -5,7 +5,7 @@ from gui.AnnotationFrame import AnnotationFrame
 from gui.ECGFrame import ECGFrame
 from gui.SettingsFrame import SettingsFrame
 
-from file_manager import FileManager, ELeadType
+from file_manager import FileManager
 import localisation
 
 
@@ -65,7 +65,7 @@ class MainWindow:
             )
 
     def update(self):
-        first_available_lead: ELeadType = list(self.file_manager.signals.keys())[0]
+        first_available_lead: str = list(self.file_manager.signals.keys())[0]
         time_axis = self.file_manager.get_time_axis()
         amplitude = self.file_manager.get_signal(channel=first_available_lead)
         self.frame_ecg.update_chart(t=time_axis, a=amplitude)
@@ -77,7 +77,7 @@ class MainWindow:
             sample_rate=fs
         )
 
-        self.master.title(f"ECG frequency analysis - Lead: {first_available_lead.to_string()}")
+        self.master.title(f"ECG frequency analysis - Lead: {first_available_lead}")
 
     def __on_closing(self):
         self.master.quit()  # Stops mainloop
