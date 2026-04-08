@@ -63,7 +63,7 @@ class ECGFrame(tk.Frame):
                         ax.axvspan(end_time - overlap_sec, end_time, color='gray', alpha=0.15)
 
                 ax.set_title(
-                    f"{localisation.name_resolver.get("ECG_chart_title")}{lead.to_string()}",
+                    f"{localisation.name_resolver.get("ECG_chart_title")}{lead}",
                     fontsize=8,
                     loc='left',
                     bbox=dict(

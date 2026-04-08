@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from file_manager import FileManager, ELeadType
+from file_manager import FileManager
 from gui.display_data.DisplayManager import DisplayManager
 
 
@@ -20,9 +20,9 @@ class LeadsListFrame(tk.Frame):
             else:
                 var.set(False)
 
-            chk = tk.Checkbutton(self, text=lead.to_string(), variable=var)
+            chk = tk.Checkbutton(self, text=lead, variable=var)
             chk.pack(anchor="w")
             self.lead_checkbuttons.append({"lead": lead, "var": var, "widget": chk})
 
-    def get_currently_checked(self) -> list[ELeadType]:
+    def get_currently_checked(self) -> list[str]:
         return [item["lead"] for item in self.lead_checkbuttons if item["var"].get()]

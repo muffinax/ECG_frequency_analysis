@@ -59,7 +59,7 @@ class MainWindow:
         self.label_patient_info = tk.Label(self.frame_header, text="Pacjent: --- | Data: ---", font=("Arial", 10),
                                            bg="#f0f0f0")
         self.label_patient_info.pack(side=tk.LEFT, padx=20, pady=5)
-        self.label_duration_info = tk.Label(self.frame_header, text="Czas trwania: --:--:--", font=("Arial", 10),
+        self.label_duration_info = tk.Label(self.frame_header, text="Czas trwania: -- [s]", font=("Arial", 10),
                                             bg="#f0f0f0")
         self.label_duration_info.pack(side=tk.LEFT, padx=20, pady=5)
         self.label_fs_info = tk.Label(self.frame_header, text="Fs: --- Hz", font=("Arial", 10), bg="#f0f0f0")
@@ -130,7 +130,8 @@ class MainWindow:
             )
 
     def update(self):
-        from_sample = self.navigation_manager.current_sample
+        current_sample_float = self.navigation_manager.current_sample
+        from_sample = int(round(current_sample_float))
 
         window_samples = int(round(self.navigation_manager.window_size_sec * self.navigation_manager.current_fs))
 
@@ -171,14 +172,14 @@ class MainWindow:
                 "%Y-%m-%d %H:%M:%S") if self.file_manager.base_datetime else "Brak daty"
 
             total_sec = self.file_manager.get_duration_seconds()
-            hours = int(total_sec // 3600)
-            minutes = int((total_sec % 3600) // 60)
-            seconds = int(total_sec % 60)
-            duration_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+            # hours = int(total_sec // 3600)
+            # minutes = int((total_sec % 3600) // 60)
+            # seconds = int(total_sec % 60)
+            # duration_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
             self.label_file_info.config(text=f"Plik: {filename}")
             self.label_fs_info.config(text=f"Próbkowanie: {fs} Hz")
-            self.label_duration_info.config(text=f"Czas trwania: {duration_str}")
+            self.label_duration_info.config(text=f"Czas trwania: {total_sec:.2f} [s]")
             self.label_patient_info.config(text=f"Start badania: {start_date}")
 
             if self.file_manager.base_datetime:
