@@ -7,28 +7,32 @@ import numpy as np
 
 from .base_ecg_reader import BaseECGReader
 from .e_voltage_unit import EVoltageUnit
-from .e_lead_type import ELeadType
 from .annotation import Annotation
 from .input_manager_exception import InputManagerException
+
+from .wfdb_reader import WFDBReader
+from .edf_reader import EDFReader
 
 
 class FileManager:
     def __init__(self) -> None:
+        self.b_opened: bool = False
         self.filepath: str | None = None
         self.wfdb_record: Any | None = None
         self.wfdb_annotation: Any | None = None
         self.sampling_frequency: float = 0.0
         self.base_datetime: datetime | None = None
         self.comments: dict[str, str] = {}
-        self.signals: dict[ELeadType, np.ndarray] = {}
+        self.signals: dict[str, np.ndarray] = {}
         self.annotations: list[Annotation] = []
 
     def _get_reader_for_file(self, filepath: str) -> BaseECGReader:
         file_extension: str = os.path.splitext(p=filepath)[1].lower()
 
         if file_extension in ['.hea', '.dat', '.atr']:
-            from .wfdb_reader import WFDBReader
             return WFDBReader()
+        elif file_extension in ['.edf']:
+            return EDFReader()
         else:
             raise InputManagerException(
                 error_id="unsupported_file_type",
@@ -54,8 +58,8 @@ class FileManager:
 
             selected_filepath: str = filedialog.askopenfilename(
                 parent=root_window,
-                title="Select WFDB Header File",
-                filetypes=[("WFDB Header", "*.hea"), ("All files", "*.*")]
+                title="Select input ECG file",
+                filetypes=[("WFDB Header", "*.hea"), ("EDF", "*.edf"), ("All files", "*.*")]
             )
 
             if selected_filepath:
@@ -68,7 +72,7 @@ class FileManager:
             )
 
     def opened(self) -> bool:
-        return self.wfdb_record is not None
+        return self.b_opened
 
     def __bool__(self) -> bool:
         return self.opened()
@@ -97,12 +101,12 @@ class FileManager:
                 error_description="Either relative_time or real_time must be provided."
             )
 
-    def get_available_leads(self) -> list[ELeadType]:
+    def get_available_leads(self) -> list[str]:
         return list(self.signals.keys())
 
     def get_signal(
             self,
-            channel: ELeadType,
+            channel: str,
             from_sample: int | None = None,
             to_sample: int | None = None,
             unit: EVoltageUnit = EVoltageUnit.MILLIVOLTS
@@ -111,7 +115,7 @@ class FileManager:
         if channel not in self.signals:
             raise InputManagerException(
                 error_id="channel_not_found",
-                error_description=f"Channel {channel.to_string()} is not present in this record."
+                error_description=f"Channel {channel} is not present in this record."
             )
 
         signal_array: np.ndarray = self.signals[channel]
@@ -204,7 +208,7 @@ class FileManager:
         if not self.signals:
             return 0
 
-        first_lead_key: ELeadType = list(self.signals.keys())[0]
+        first_lead_key: str = list(self.signals.keys())[0]
         total_length: int = len(self.signals[first_lead_key])
 
         return total_length
@@ -217,3 +221,15 @@ class FileManager:
         duration_in_seconds: float = total_samples / self.sampling_frequency
 
         return duration_in_seconds
+
+    def clear(self) -> None:
+        self.b_opened = False
+        self.filepath = None
+        self.wfdb_record = None
+        self.wfdb_annotation = None
+        self.sampling_frequency = 0.0
+        self.base_datetime = None
+
+        self.comments.clear()
+        self.signals.clear()
+        self.annotations.clear()

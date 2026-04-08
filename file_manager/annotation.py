@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 from .e_annotation_type import EAnnotationType
-from .e_lead_type import ELeadType
 
 import localisation
 
@@ -11,7 +10,7 @@ class Annotation:
     sample_index: int
     annotation_type: EAnnotationType
     auxiliary_note: str
-    channel: ELeadType | None
+    channel: str | None
     subtype: int = 0
     numeric_value: int = 0
     custom_label: str | None = None
