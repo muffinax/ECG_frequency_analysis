@@ -23,7 +23,7 @@ class ParametersWindow(tk.Toplevel):
         self.geometry(f"{window_width}x{window_height}+{center_x}+{center_y}")
 
         self.frame_leads_list = LeadsListFrame(self, self.display_manager, file_manager)
-        self.frame_details = DetailsFrame(self, display_manager)
+        # self.frame_details = DetailsFrame(self, display_manager)
 
         save_button = tk.Button(
             self,
@@ -31,7 +31,7 @@ class ParametersWindow(tk.Toplevel):
             command=self.__save_and_close)
 
         self.frame_leads_list.pack()
-        self.frame_details.pack()
+        # self.frame_details.pack()
         save_button.pack(pady=10)
 
     def __save_and_close(self):
