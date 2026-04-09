@@ -202,7 +202,6 @@ class MainWindow:
     def __open_parameters_window(self):
         params_window = ParametersWindow(
             master=self.master,
-            file_manager=self.file_manager,
             display_manager=self.display_manager)
         params_window.grab_set()
         self.master.wait_window(params_window)
