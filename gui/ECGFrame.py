@@ -1,87 +1,100 @@
 import tkinter as tk
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.ticker import MultipleLocator, FuncFormatter
+
+from scipy.fft import fftfreq
 
 import localisation
 from gui.display_data.DisplayManager import DisplayManager
+from gui.presentation_data_panel.LeadCanvasSet import LeadCanvasSet
+from gui.presentation_data_panel.SingleECGCanvas import SingleECGCanvas
 
 
 class ECGFrame(tk.Frame):
-    def __init__(self, master, display_manager: DisplayManager ,**kwargs):
+    def __init__(self, master, display_manager: DisplayManager, **kwargs):
         super().__init__(master, **kwargs)
         self.display_manager = display_manager
+        self.canvas_sets = []
+        self.current_plot_height = 2.5
 
-        self.figure = Figure(figsize=(6, 4), dpi=100)
-        self.canvas = FigureCanvasTkAgg(self.figure, self)
-        self.canvas_widget = self.canvas.get_tk_widget()
-        self.canvas_widget.pack(fill=tk.BOTH, expand=True)
+        self.bg_canvas = tk.Canvas(self, borderwidth=0, highlightthickness=0)
 
-    def _apply_ecg_grid(self, ax, duration):
-        ax.xaxis.set_major_locator(MultipleLocator(0.2))
-        ax.yaxis.set_major_locator(MultipleLocator(0.5))
-        ax.grid(which='major', color='#ffb3b3', linestyle='-', linewidth=1.0)
+        self.scrollbar = tk.Scrollbar(self, orient="vertical", command=self.bg_canvas.yview)
+        self.bg_canvas.configure(yscrollcommand=self.scrollbar.set)
 
-        if duration <= 5.0:
-            ax.xaxis.set_minor_locator(MultipleLocator(0.04))
-            ax.yaxis.set_minor_locator(MultipleLocator(0.1))
-            ax.grid(which='minor', color='#ffe6e6', linestyle='-', linewidth=0.5)
-        else:
-            ax.minorticks_off()
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.bg_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        def time_formatter(x, pos):
-            if abs(x - round(x)) < 0.01:
-                return f"{int(round(x))}"
-            return ""
+        self.scrollable_frame = tk.Frame(self.bg_canvas)
 
-        ax.xaxis.set_major_formatter(FuncFormatter(time_formatter))
+        self.canvas_window = self.bg_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
 
-    def update_charts(self, time_axis, signals_dict, overlap_sec=0.0, is_first=False, is_last=False):
-        self.figure.clear()
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.bg_canvas.configure(scrollregion=self.bg_canvas.bbox("all"))
+        )
 
-        leads_to_draw = self.display_manager.displayed_leads    #Later will be added frequency leads
-        num_of_plots = len(leads_to_draw)
-        if num_of_plots == 0 or len(time_axis) == 0:
-            self.canvas.draw()
-            return
+        self.bg_canvas.bind(
+            "<Configure>",
+            lambda e: self.bg_canvas.itemconfig(self.canvas_window, width=e.width)
+        )
 
-        for x, lead in enumerate(leads_to_draw):
-            ax = self.figure.add_subplot(num_of_plots, 1, x + 1)
-            amplitude = signals_dict.get(lead)
+        # Obsługa kółka myszy
+        self.bg_canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
-            if amplitude is not None and len(amplitude) == len(time_axis):
-                ax.plot(time_axis, amplitude, color='black', linewidth=1)
-                ax.set_xlim([time_axis[0], time_axis[-1]])
+        self.bg_canvas.bind_all("<Control-MouseWheel>", self._on_zoom)  #Windows/MacOS
+        self.bg_canvas.bind_all("<Control-Button-4>", self._on_zoom)  #Linux (Scroll Up)
+        self.bg_canvas.bind_all("<Control-Button-5>", self._on_zoom)  #Linux (Scroll Down)
 
-                if overlap_sec > 0.0:
-                    if not is_first:
-                        start_time = time_axis[0]
-                        ax.axvspan(start_time, start_time + overlap_sec, color='gray', alpha=0.15)
+    def _on_mousewheel(self, event):
+        #(Windows/Mac)
+        self.bg_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
-                    if not is_last:
-                        end_time = time_axis[-1]
-                        ax.axvspan(end_time - overlap_sec, end_time, color='gray', alpha=0.15)
+    def _rebuild_canvas_sets(self):
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+        self.canvas_sets.clear()
 
-                ax.set_title(
-                    f"{localisation.name_resolver.get("ECG_chart_title")}{lead.to_string()}",
-                    fontsize=8,
-                    loc='left',
-                    bbox=dict(
-                        facecolor='#E0E0E0',
-                        edgecolor='none',
-                        alpha=0.8,
-                        pad=4
-                    )
-                )
+        for lead in self.display_manager.displayed_leads:
+            # Przekazujemy zapamiętaną wysokość podczas tworzenia NOWYCH zestawów
+            canvas_set = LeadCanvasSet(self.scrollable_frame, lead, self.current_plot_height)
+            canvas_set.pack(fill=tk.X, expand=False, pady=5)
+            self.canvas_sets.append(canvas_set)
 
-                ax.set_ylabel(localisation.name_resolver.get("frame_annotationframe_table_amplitude_label"))
-                ax.grid(True, linestyle='--', alpha=0.7)
+    def _on_zoom(self, event):
+        """Obsługuje zdarzenie Ctrl + Scroll do zmiany wysokości wykresów."""
+        step = 0.2
 
-                window_duration = time_axis[-1] - time_axis[0]
-                self._apply_ecg_grid(ax, window_duration)
+        if hasattr(event, 'num') and event.num == 4:  # Linux
+            self.current_plot_height += step
+        elif hasattr(event, 'num') and event.num == 5:  # Linux
+            self.current_plot_height -= step
+        elif hasattr(event, 'delta'):
+            if event.delta > 0:  # Windows/Mac
+                self.current_plot_height += step
+            elif event.delta < 0:  # Windows/Mac
+                self.current_plot_height -= step
 
-                if x == num_of_plots - 1:
-                    ax.set_xlabel(localisation.name_resolver.get("frame_annotationframe_table_time_label"))
+        self.current_plot_height = max(1.0, min(self.current_plot_height, 5.0))
 
-        self.figure.tight_layout()
-        self.canvas.draw()
+        for canvas_set in self.canvas_sets:
+            canvas_set.set_height(self.current_plot_height)
+
+    def update_charts(self, time_axis, signals_dict, secondary_data_dict=None, overlap_sec=0.0, is_first=False,
+                      is_last=False):
+        if secondary_data_dict is None:
+            secondary_data_dict = {}
+
+        current_canvas_leads = [c_set.lead_name for c_set in self.canvas_sets]
+
+        if current_canvas_leads != self.display_manager.displayed_leads:
+            self._rebuild_canvas_sets()
+
+        show_fft = self.display_manager.show_frequency_analysis
+
+        for canvas_set in self.canvas_sets:
+            lead = canvas_set.lead_name
+            canvas_set.toggle_secondary_canvas(show_fft)
+
+            amplitude_data = signals_dict.get(lead)
+            analysis_data = secondary_data_dict.get(lead)
+
+            canvas_set.update_set_data(time_axis, amplitude_data, analysis_data, overlap_sec, is_first, is_last)

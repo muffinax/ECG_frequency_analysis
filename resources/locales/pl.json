@@ -80,8 +80,6 @@
     "menubar_help": "Pomoc",
     "menubar_help_keys": "Przyciski",
 
-    "ECG_chart_title": "EKG Sygnał - ",
-
     "parameters_save_button": "Zastosuj",
     "parameters_window_frequency_label": "Częstotliwość: ",
     "parameters_fragment_window_width_label": "Wielkość okna: ",

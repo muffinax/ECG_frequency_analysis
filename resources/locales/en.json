@@ -80,8 +80,6 @@
     "menubar_help": "Help",
     "menubar_help_keys": "Keys",
 
-    "ECG_chart_title": "ECG Signal - ",
-
     "parameters_save_button": "Apply",
     "parameters_window_frequency_label": "Frequency: ",
     "parameters_fragment_window_width_label": "Window width: ",

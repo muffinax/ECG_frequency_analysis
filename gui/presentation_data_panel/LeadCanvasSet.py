@@ -1,0 +1,33 @@
+import tkinter as tk
+
+from gui.presentation_data_panel.SingleECGCanvas import SingleECGCanvas
+from gui.presentation_data_panel.SingleFFTCanvas import SingleFFTCanvas
+
+
+class LeadCanvasSet(tk.Frame):
+    def __init__(self, master, lead_name: str, plot_height: float = 2.5, **kwargs):
+        super().__init__(master, **kwargs)
+        self.lead_name = lead_name
+
+        self.ecg_canvas = SingleECGCanvas(self, lead_name, plot_height)
+        self.fft_canvas = SingleFFTCanvas(self, lead_name, plot_height)
+
+        self.ecg_canvas.pack(fill=tk.X, expand=False, pady=(0, 5))
+
+    def toggle_secondary_canvas(self, show: bool):
+        is_packed = bool(self.fft_canvas.winfo_manager())
+        if show and not is_packed:
+            self.fft_canvas.pack(fill=tk.X, expand=False, pady=(0, 15))
+        elif not show and is_packed:
+            self.fft_canvas.pack_forget()
+
+    def update_set_data(self, time_axis, amplitude_data, fft_data, overlap_sec=0.0, is_first=False,
+                        is_last=False):
+        self.ecg_canvas.update_chart(time_axis, amplitude_data, overlap_sec, is_first, is_last)
+
+        if fft_data is not None:
+            self.fft_canvas.update_chart(fft_data)
+
+    def set_height(self, new_height: float):
+        self.ecg_canvas.set_height(new_height)
+        self.fft_canvas.set_height(new_height)

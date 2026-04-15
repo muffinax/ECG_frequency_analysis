@@ -12,7 +12,6 @@ from gui.parameters_window.ParametersWindow import ParametersWindow
 
 from file_manager import FileManager
 import localisation
-from localisation import name_resolver
 
 
 class MainWindow:
@@ -96,7 +95,7 @@ class MainWindow:
         self.menu_analysis.add_command(
             label=localisation.name_resolver.get("menubar_analysis_perform_analysis"),
             state=tk.DISABLED,
-            command=None)
+            command=self.__toggle_analysis)
         self.menu_analysis.add_command(
             label=localisation.name_resolver.get("menubar_analysis_parameters"),
             state=tk.DISABLED,
@@ -196,4 +195,9 @@ class MainWindow:
             display_manager=self.display_manager)
         params_window.grab_set()
         self.master.wait_window(params_window)
+        self.update()
+
+    def __toggle_analysis(self):
+        self.display_manager.show_frequency_analysis = not self.display_manager.show_frequency_analysis
+
         self.update()
