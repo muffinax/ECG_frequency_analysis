@@ -28,14 +28,3 @@ Build consists of two phases:
    Open file ./build_config/installer_setup.iss in Inno Setup Compiler and press "Compile".
    
    Compiled installer will be located at: ./build_config/build/installer_win32
-
-## Project structure
-
-.
-├───build_config            # Build configuration and results
-│   └───build               # Build results
-├───file_manager            # File manager package, allows for reading ecg files
-├───gui                     # GUI
-├───localisation            # Language file support
-└───resources               # App resources required on runtime (bundled with exe)
-    └───locales             # Localisation files (pl.json, en.json etc.)
