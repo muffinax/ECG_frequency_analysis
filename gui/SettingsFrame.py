@@ -74,9 +74,9 @@ class SettingsFrame(tk.Frame):
         self.on_update_callback()
 
     def _cmd_go_time(self):
-        user_time = self.time_entry.get()
+        user_input = self.time_entry.get()
         try:
-            self.navigation_manager.jump_to_time_string(user_time)
+            self.navigation_manager.jump_to_time_string(user_input)
             self.on_update_callback()
         except ValueError:
             messagebox.showwarning(localisation.name_resolver.get("messagebox_error"))

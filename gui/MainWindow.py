@@ -62,10 +62,12 @@ class MainWindow:
 
         self.label_file_info = tk.Label(self.frame_header, text="Plik: ---", font=("Arial", 10, "bold"), bg="#f0f0f0")
         self.label_file_info.pack(side=tk.LEFT, padx=10, pady=5)
-        self.label_patient_info = tk.Label(self.frame_header, text="Pacjent: --- | Data: ---", font=("Arial", 10),
-                                           bg="#f0f0f0")
-        self.label_patient_info.pack(side=tk.LEFT, padx=20, pady=5)
-        self.label_duration_info = tk.Label(self.frame_header, text="Czas trwania: --:--:--", font=("Arial", 10),
+        self.label_patient_name = tk.Label(self.frame_header, text="Pacjent: ---", font=("Arial", 10), bg="#f0f0f0")
+        self.label_patient_name.pack(side=tk.LEFT, padx=15, pady=5)
+
+        self.label_date_info = tk.Label(self.frame_header, text="Data: ---", font=("Arial", 10), bg="#f0f0f0")
+        self.label_date_info.pack(side=tk.LEFT, padx=15, pady=5)
+        self.label_duration_info = tk.Label(self.frame_header, text="Czas trwania: -- [s]", font=("Arial", 10),
                                             bg="#f0f0f0")
         self.label_duration_info.pack(side=tk.LEFT, padx=20, pady=5)
         self.label_fs_info = tk.Label(self.frame_header, text="Fs: --- Hz", font=("Arial", 10), bg="#f0f0f0")
@@ -211,19 +213,26 @@ class MainWindow:
                 "%Y-%m-%d %H:%M:%S") if self.file_manager.base_datetime else "Brak daty"
 
             total_sec = self.file_manager.get_duration_seconds()
-            hours = int(total_sec // 3600)
-            minutes = int((total_sec % 3600) // 60)
-            seconds = int(total_sec % 60)
-            duration_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+            # hours = int(total_sec // 3600)
+            # minutes = int((total_sec % 3600) // 60)
+            # seconds = int(total_sec % 60)
+            # duration_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
             self.label_file_info.config(text=f"Plik: {filename}")
-            self.label_fs_info.config(text=f"Próbkowanie: {fs} Hz")
-            self.label_duration_info.config(text=f"Czas trwania: {duration_str}")
-            self.label_patient_info.config(text=f"Start badania: {start_date}")
+            self.label_fs_info.config(text=f"Fs: {fs} Hz")
+            self.label_duration_info.config(text=f"Czas trwania: {total_sec:.2f} [s]")
 
+            patient_name = self.file_manager.comments.get("patient", "Nieznany")
+            if patient_name == "Nieznany" and self.file_manager.comments:
+                patient_name = next(iter(self.file_manager.comments.values()), "Nieznany")
+            self.label_patient_name.config(text=f"Pacjent: {patient_name}")
+
+            self.label_date_info.config(text=f"Data: {start_date}")
             if self.file_manager.base_datetime:
                 date_str = self.file_manager.base_datetime.strftime("%d.%m.%Y %H:%M")
-                self.label_patient_info.config(text=f"Start badania: {date_str}")
+            else:
+                date_str = "Brak daty"
+            self.label_date_info.config(text=f"Data: {date_str}")
 
     def __on_closing(self):
         self.master.quit()  # Stops mainloop
