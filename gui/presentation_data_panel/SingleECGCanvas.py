@@ -7,14 +7,25 @@ import localisation
 
 #Drawing chart
 class SingleECGCanvas(tk.Frame):
-    def __init__(self, master, lead_name: str, plot_height: float = 2.5, **kwargs):
+    def __init__(self, master, lead_name: str, plot_height: float = 2.5, click_callback=None, **kwargs):
         super().__init__(master, **kwargs)
         self.lead_name = lead_name
+
+        self.click_callback = click_callback
+
+        # click and drag variables
+        self.is_dragging = False
+        self.drag_start_x = -1.0
+        self.is_analysis_enabled = False
 
         self.figure = Figure(figsize=(6, plot_height), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.figure, self)
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+        self.canvas.mpl_connect('button_press_event', self._on_press)
+        self.canvas.mpl_connect('motion_notify_event', self._on_motion)
+        self.canvas.mpl_connect('button_release_event', self._on_release)
 
     def _apply_ecg_grid(self, ax, duration):
         ax.xaxis.set_major_locator(MultipleLocator(0.2))
@@ -35,14 +46,14 @@ class SingleECGCanvas(tk.Frame):
 
         ax.xaxis.set_major_formatter(FuncFormatter(time_formatter))
 
-    def update_chart(self, time_axis, amplitude, overlap_sec=0.0, is_first=False, is_last=False):
+    def update_chart(self, time_axis, amplitude, overlap_sec=0.0, is_first=False, is_last=False, analysis_start=-1.0, analysis_end=-1.0, analysis_overlap=0.0):
         self.figure.clear()
 
         if amplitude is None or len(time_axis) == 0:
             self.canvas.draw()
             return
 
-        ax = self.figure.add_subplot(1, 1, 1)  # Zawsze 1 wykres na płótno
+        ax = self.figure.add_subplot(1, 1, 1)
 
         ax.plot(time_axis, amplitude, color='black', linewidth=1)
         ax.set_xlim([time_axis[0], time_axis[-1]])
@@ -65,6 +76,8 @@ class SingleECGCanvas(tk.Frame):
         window_duration = time_axis[-1] - time_axis[0]
         self._apply_ecg_grid(ax, window_duration)
 
+        self.apply_analysis(analysis_start, analysis_end, analysis_overlap)
+
         self.figure.subplots_adjust(left=0.1, right=0.98, top=0.85, bottom=0.25)
         self.canvas.draw()
 
@@ -72,3 +85,76 @@ class SingleECGCanvas(tk.Frame):
         pixel_height = int(new_height_inches * self.figure.dpi)
         self.canvas_widget.configure(height=pixel_height)
         self.canvas.draw_idle()
+
+    def apply_analysis(self, analysis_start=-1.0, analysis_end=-1.0, analysis_overlap=0.0):
+        if not self.figure.axes:
+            return
+
+        if hasattr(self, 'analysis_visual_elements'):
+            for element in self.analysis_visual_elements:
+                try:
+                    element.remove()
+                except Exception:
+                    pass
+
+        self.analysis_visual_elements = []
+
+        ax = self.figure.axes[0]
+
+        if analysis_start >= 0:
+            if analysis_end < 0:
+                line = ax.axvline(x=analysis_start, color='blue', linewidth=2.0, linestyle='--')
+                self.analysis_visual_elements.append(line)
+            else:
+                start = min(analysis_start, analysis_end)
+                end = max(analysis_start, analysis_end)
+
+                line1 = ax.axvline(x=start, color='blue', linewidth=2.0, linestyle='--')
+                line2 = ax.axvline(x=end, color='blue', linewidth=2.0, linestyle='--')
+                span_main = ax.axvspan(start, end, color='blue', alpha=0.15)
+                self.analysis_visual_elements.extend([line1, line2, span_main])
+
+                if analysis_overlap > 0.0:
+                    span_left = ax.axvspan(start - analysis_overlap, start, color='dodgerblue', alpha=0.35)
+                    span_right = ax.axvspan(end, end + analysis_overlap, color='dodgerblue', alpha=0.35)
+                    self.analysis_visual_elements.extend([span_left, span_right])
+
+        self.canvas.draw_idle()
+
+    def _on_press(self, event):
+        if not self.is_analysis_enabled:
+            return
+
+        if event.inaxes is not None and event.xdata is not None:
+            self.is_dragging = True
+            self.drag_start_x = float(event.xdata)
+
+    def _on_motion(self, event):
+        if not self.is_analysis_enabled:
+            return
+
+        if self.is_dragging and event.inaxes is not None and event.xdata is not None:
+            current_x = float(event.xdata)
+            self.apply_analysis(self.drag_start_x, current_x)
+
+    def _on_release(self, event):
+        if not self.is_analysis_enabled or not self.is_dragging:
+            return
+
+        self.is_dragging = False
+
+        if event.xdata is not None:
+            drag_end_x = float(event.xdata)
+        else:
+            drag_end_x = self.drag_start_x
+
+        if abs(drag_end_x - self.drag_start_x) < 0.05:
+            # user clicked
+            if self.click_callback:
+                self.click_callback(self.lead_name, self.drag_start_x, -1.0)
+        else:
+            #user clicked and dragged
+            start = min(self.drag_start_x, drag_end_x)
+            end = max(self.drag_start_x, drag_end_x)
+            if self.click_callback:
+                self.click_callback(self.lead_name, start, end)

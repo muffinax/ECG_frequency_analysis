@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 
 from gui.AnnotationFrame import AnnotationFrame
+from gui.display_data.AnalysisManager import AnalysisManager
 from gui.display_data.DisplayManager import DisplayManager
 from gui.ECGFrame import ECGFrame
 from gui.SettingsFrame import SettingsFrame
@@ -19,8 +20,11 @@ class MainWindow:
         self.master = master
 
         self.file_manager = FileManager()
+        self.fft_manager = None
+
         self.display_manager = DisplayManager()
         self.navigation_manager = NavigationManager()
+        self.analysis_manager = AnalysisManager()
 
         if sys.platform == 'win32':
             #Windows
@@ -65,7 +69,7 @@ class MainWindow:
         self.label_fs_info.pack(side=tk.RIGHT, padx=10, pady=5)
 
         #ECG CHARTS
-        self.frame_ecg = ECGFrame(master=self.master, display_manager=self.display_manager)
+        self.frame_ecg = ECGFrame(master=self.master, display_manager=self.display_manager, analysis_manager=self.analysis_manager)
         self.frame_ecg.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         self.master.protocol("WM_DELETE_WINDOW", self.__on_closing)
@@ -117,6 +121,7 @@ class MainWindow:
             if self.file_manager.opened() and self.file_manager.signals:
                 self.display_manager.reset_to_defaults(self.file_manager.get_available_leads())
                 self.navigation_manager.reset_for_new_file(fs=self.file_manager.sampling_frequency,total_samples=self.file_manager.get_total_samples())
+                self.analysis_manager.reset_to_defaults()
                 self.update_header_info()
                 self.update()
                 self.menu_analysis.entryconfig(0, state=tk.NORMAL)
@@ -148,6 +153,10 @@ class MainWindow:
         self.frame_ecg.update_charts(
             time_axis=time_axis,
             signals_dict=signals_to_draw,
+
+            #whole object for now
+            fft_data_dict=self.fft_manager,
+
             overlap_sec=self.navigation_manager.overlap_sec,
             is_first=self.navigation_manager.is_first_window(),
             is_last=self.navigation_manager.is_last_window())
@@ -192,7 +201,8 @@ class MainWindow:
         params_window = ParametersWindow(
             master=self.master,
             file_manager=self.file_manager,
-            display_manager=self.display_manager)
+            display_manager=self.display_manager,
+            analysis_manager=self.analysis_manager)
         params_window.grab_set()
         self.master.wait_window(params_window)
         self.update()
@@ -200,4 +210,19 @@ class MainWindow:
     def __toggle_analysis(self):
         self.display_manager.show_frequency_analysis = not self.display_manager.show_frequency_analysis
 
+        if not self.display_manager.show_frequency_analysis:
+            self.analysis_manager.analysis_start = -1.0
+            self.analysis_manager.analysis_end = -1.0
+
         self.update()
+
+    def _update_fft_charts(self):
+        # Data for fft
+        start = self.analysis_manager.analysis_start
+        end = self.analysis_manager.analysis_end
+        overap = self.analysis_manager.analysis_overlap
+        amplitude = 2
+        interferrence = self.analysis_manager.interference
+
+        # update here fft_data
+        self.fft_manager = None

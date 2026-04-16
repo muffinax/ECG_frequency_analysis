@@ -44,6 +44,7 @@
     "enum_eannotationtype_edf": "EDF imported annotation (see Notes)",
     "enum_eannotationtype_unknown": "Unknown Annotation Type",
 
+
     "frame_annotationframe_table_label": "Detected annotations",
     "frame_annotationframe_table_time_label": "Time [s]",
     "frame_annotationframe_table_amplitude_label": "Amplitude [mV]",
@@ -67,13 +68,15 @@
 
     "parameters_save_button": "Apply",
     "parameters_window_frequency_label": "Frequency: ",
-    "parameters_fragment_window_width_label": "Window width: ",
-    "parameters_window_overlay_label": "Frame size: ",
-    "parameters_window_start_label": "Starting point: ",
     "parameters_window_time_label": "Time: ",
+
+    "parameters_fragment_window_width_label": "Window width: ",
+    "parameters_window_overlay_label": "Overlay size: ",
+    "parameters_window_interference_label": "Filtered interference: ",
+    "parameters_window_amplitude_label": "Amplitude: ",
 
     "parameters_window_go_button": "Go",
 
     "messagebox_error": "Error",
-    "messagebox_could_not_read_file": "Nie można wczytać pliku"
+    "messagebox_could_not_read_file": "Can't read the file"
 }
