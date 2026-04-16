@@ -27,8 +27,7 @@ class AnalysisManager:
 
         self.analysis_start = -1.0
         self.analysis_end = -1.0
-        self.analysis_overlap = 0.3
-        self.amplitude = 1.0
+        self.analysis_overlap = 0.0
 
     def reset_to_defaults(self):
         self.fft_time_mode = FFTTimeFrameMode.CUSTOM_TIME
@@ -36,5 +35,4 @@ class AnalysisManager:
 
         self.analysis_start = -1.0
         self.analysis_end = -1.0
-        self.analysis_overlap = 0.3
-        self.amplitude = 2
+        self.analysis_overlap = 0.0

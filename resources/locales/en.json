@@ -84,6 +84,8 @@
     "parameters_window_interference_label": "Filtered interference: ",
     "parameters_window_amplitude_label": "Amplitude: ",
 
+    "parameters_window_size_label": "Window size: ",
+
     "parameters_window_go_button": "Go",
 
     "messagebox_error": "Error",

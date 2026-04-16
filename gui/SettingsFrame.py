@@ -20,8 +20,8 @@ class SettingsFrame(tk.Frame):
                                          command=None)
         self.move_left_button = tk.Button(btn_container, text="\u25C0", font=("Arial", 16), cursor="hand2",
                                           command=self._cmd_left)
-        self.play_pause_button = tk.Button(btn_container, text="\u23EF", font=("Arial", 16), cursor="hand2",
-                                           command=None)
+        self.play_pause_button = tk.Button(btn_container, text="\u25B6", font=("Arial", 16), cursor="hand2",
+                                           command=self._cmd_play_pause)
         self.move_right_button = tk.Button(btn_container, text="\u25B6", font=("Arial", 16), cursor="hand2",
                                            command=self._cmd_right)
         self.next_button = tk.Button(btn_container, text="\u23E9", font=("Arial", 16), cursor="hand2",
@@ -85,5 +85,28 @@ class SettingsFrame(tk.Frame):
         self.time_entry.delete(0, tk.END)
         self.time_entry.insert(0, current_time_str)
 
+    def _cmd_play_pause(self):
+        is_playing = self.navigation_manager.toggle_playback()
+
+        if is_playing:
+            # Zmień ikonkę na pauzę (znak pauzy w Unicode)
+            self.play_pause_button.config(text="\u23F8")
+            self._playback_loop()
+        else:
+            # Zmień ikonkę z powrotem na odtwarzanie (znak play)
+            self.play_pause_button.config(text="\u25B6")
+
+    def _playback_loop(self):
+        delay_ms = 50
+        delta_sec = delay_ms / 1000.0
+
+        if self.navigation_manager.is_playing:
+            has_moved = self.navigation_manager.step_playback(delta_sec)
+
+            if has_moved:
+                self.on_update_callback()
+                self.after(delay_ms, self._playback_loop)
+            else:
+                self.play_pause_button.config(text="\u25B6")
 
 

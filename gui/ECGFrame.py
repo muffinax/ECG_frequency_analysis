@@ -11,10 +11,11 @@ from gui.presentation_data_panel.SingleECGCanvas import SingleECGCanvas
 
 
 class ECGFrame(tk.Frame):
-    def __init__(self, master, display_manager: DisplayManager, analysis_manager: AnalysisManager, **kwargs):
+    def __init__(self, master, display_manager: DisplayManager, analysis_manager: AnalysisManager, on_update_callback=None, **kwargs):
         super().__init__(master, **kwargs)
         self.display_manager = display_manager
-        self.analysis_manager=analysis_manager
+        self.analysis_manager = analysis_manager
+        self.on_update_callback = on_update_callback
         self.canvas_sets = []
         self.current_plot_height = 2.5
 
@@ -146,6 +147,10 @@ class ECGFrame(tk.Frame):
                 analysis_end=self.analysis_manager.analysis_end,
                 analysis_overlap=self.analysis_manager.analysis_overlap
             )
+
+        if self.analysis_manager.analysis_start >= 0 and self.analysis_manager.analysis_end >= 0:
+            if self.on_update_callback:
+                self.on_update_callback()
 
 
 

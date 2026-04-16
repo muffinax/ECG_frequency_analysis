@@ -84,6 +84,8 @@
     "parameters_window_interference_label": "Filtrowanie zakłóceń: ",
     "parameters_window_amplitude_label": "Amplituda: ",
 
+    "parameters_window_size_label": "Wielkość okna: ",
+
     "parameters_window_go_button": "Idź",
 
     "messagebox_error": "Błąd",
