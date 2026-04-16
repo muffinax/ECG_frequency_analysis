@@ -44,6 +44,12 @@
     "enum_eannotationtype_edf": "EDF imported annotation (see Notes)",
     "enum_eannotationtype_unknown": "Unknown Annotation Type",
 
+    "enum_fft_frame_mode_r": "From R to R",
+    "enum_fft_frame_mode_custom": "Choose manually",
+
+    "enum_interfefence_filter_none": "No filter",
+    "enum_interfefence_filter_50": "50 Hz (EU/Asia)",
+    "enum_interfefence_filter_60": "60 Hz (USA)",
 
     "frame_annotationframe_table_label": "Detected annotations",
     "frame_annotationframe_table_time_label": "Time [s]",
@@ -69,6 +75,9 @@
     "parameters_save_button": "Apply",
     "parameters_window_frequency_label": "Frequency: ",
     "parameters_window_time_label": "Time: ",
+
+    "parameters_analysis_label": "Analysis parameters",
+    "parameters_leads_label": "Available leads:",
 
     "parameters_fragment_window_width_label": "Window width: ",
     "parameters_window_overlay_label": "Overlay size: ",
