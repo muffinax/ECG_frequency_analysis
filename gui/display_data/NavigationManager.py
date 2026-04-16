@@ -1,4 +1,4 @@
-from gui.TimeConverter import TimeConverter
+import localisation
 
 
 class NavigationManager:
@@ -31,17 +31,23 @@ class NavigationManager:
 
     def next_window(self):
         window_samples = int(round(self.window_size_sec * self.current_fs))
-        if self.current_sample >= self.total_samples - window_samples:
-            self.current_sample = max(0, self.total_samples - window_samples)
+        last_possible_start = max(0.0, float(self.total_samples) - window_samples)
+        if self.current_sample >= last_possible_start:
+            self.current_sample = last_possible_start
             return
 
         step_sec = self.window_size_sec - self.overlap_sec
         if step_sec <= 0:
             step_sec = self.window_size_sec
 
-        step_samples = int(round(step_sec * self.current_fs))
-        if self.current_sample + step_samples < self.total_samples:
-            self.current_sample += step_samples
+        step_samples = step_sec * self.current_fs
+        new_sample = self.current_sample + step_samples
+
+        # Sprawdzamy, czy nowa pozycja nie przekracza ostatniego możliwego okna
+        if new_sample > last_possible_start:
+            self.current_sample = last_possible_start
+        else:
+            self.current_sample = new_sample
 
     def previous_window(self):
         step_sec = self.window_size_sec - self.overlap_sec
@@ -55,16 +61,32 @@ class NavigationManager:
         else:
             self.current_sample = 0
 
-    def jump_to_time_string(self, time_str: str):
-        target_sample = TimeConverter.time_str_to_samples(time_str, self.current_fs)
+    def jump_to_time_string(self, input_str: str):
+        clean_input = input_str.strip().replace(',', '.')
 
-        if target_sample <= self.total_samples:
-            self.current_sample = target_sample
-        else:
-            self.current_sample = self.total_samples
+        try:
+            target_seconds = float(clean_input)
+            target_sample = target_seconds * self.current_fs
+
+            window_samples = self.window_size_sec * self.current_fs
+            last_possible_start = max(0.0, float(self.total_samples) - window_samples)
+
+            if target_sample < 0:
+                self.current_sample = 0.0
+            elif target_sample > last_possible_start:
+                self.current_sample = last_possible_start
+            else:
+                self.current_sample = target_sample
+
+        except ValueError:
+            raise ValueError(localisation.NameResolver("messagebox_error"))
 
     def get_current_time_string(self) -> str:
-        return TimeConverter.samples_to_time_str(self.current_sample, self.current_fs)
+        if self.current_fs > 0:
+            current_time_seconds = self.current_sample / self.current_fs
+        else:
+            current_time_seconds = 0.0
+        return f"{current_time_seconds:.2f}"
 
     def is_first_window(self) -> bool:
         return self.current_sample <= 0
