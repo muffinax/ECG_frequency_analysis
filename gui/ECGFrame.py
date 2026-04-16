@@ -119,7 +119,7 @@ class ECGFrame(tk.Frame):
         if not self.display_manager.show_frequency_analysis:
             return
 
-        if self.analysis_manager.analysis_time_mode.name == "CUSTOM_TIME":
+        if self.analysis_manager.fft_time_mode.name == "CUSTOM_TIME":
             if time_end < 0:
                 if self.analysis_manager.analysis_start < 0:
                     self.analysis_manager.analysis_start = time_start

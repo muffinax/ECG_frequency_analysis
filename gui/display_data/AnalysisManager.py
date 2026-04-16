@@ -28,11 +28,13 @@ class AnalysisManager:
         self.analysis_start = -1.0
         self.analysis_end = -1.0
         self.analysis_overlap = 0.3
+        self.amplitude = 1.0
 
     def reset_to_defaults(self):
-        self.interference: InterferenceFilter = InterferenceFilter.NONE
-        self.analysis_time_mode: FFTTimeFrameMode = FFTTimeFrameMode.CUSTOM_TIME
+        self.fft_time_mode = FFTTimeFrameMode.CUSTOM_TIME
+        self.interference_filter = InterferenceFilter.NONE
 
         self.analysis_start = -1.0
         self.analysis_end = -1.0
         self.analysis_overlap = 0.3
+        self.amplitude = 2

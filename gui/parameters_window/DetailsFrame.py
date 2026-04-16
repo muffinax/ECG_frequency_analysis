@@ -15,8 +15,8 @@ class DetailsFrame(tk.Frame):
         self.var_fft_mode = tk.StringVar(value=self.analysis_manager.fft_time_mode.name)
         self.var_filter = tk.StringVar(value=self.analysis_manager.interference_filter.name)
 
-        overlay_val = str(getattr(self.analysis_manager, 'analysis_overlap', 0.0))
-        amplitude_val = str(getattr(self.analysis_manager, 'amplitude_threshold', 1.0))
+        overlay_val = str(self.analysis_manager.analysis_overlap)
+        amplitude_val = str(self.analysis_manager.amplitude)
 
         self.var_overlay = tk.StringVar(value=overlay_val)
         self.var_amplitude = tk.StringVar(value=amplitude_val)
@@ -81,11 +81,11 @@ class DetailsFrame(tk.Frame):
         self.analysis_manager.interference_filter = InterferenceFilter[selected_filter_str]
 
         try:
-            self.analysis_manager.analysis_overlap = float(self.var_overlay.get())
+            self.analysis_manager.analysis_overlap = float(self.var_overlay.get().replace(',', '.'))
         except ValueError:
             pass
 
         try:
-            self.analysis_manager.amplitude_threshold = float(self.var_amplitude.get())
+            self.analysis_manager.amplitude = float(self.var_amplitude.get().replace(',', '.'))
         except ValueError:
             pass
