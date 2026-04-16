@@ -34,7 +34,7 @@ class ParametersWindow(tk.Toplevel):
             command=self.__save_and_close)
 
         self.frame_leads_list.pack()
-        # self.frame_details.pack()
+        self.frame_details.pack()
         save_button.pack(pady=10)
 
     def __save_and_close(self):
