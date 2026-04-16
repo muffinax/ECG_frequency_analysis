@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 
 from gui.AnnotationFrame import AnnotationFrame
+from gui.display_data.AnalysisManager import AnalysisManager
 from gui.display_data.DisplayManager import DisplayManager
 from gui.ECGFrame import ECGFrame
 from gui.SettingsFrame import SettingsFrame
@@ -12,7 +13,7 @@ from gui.parameters_window.ParametersWindow import ParametersWindow
 
 from file_manager import FileManager
 import localisation
-from localisation import name_resolver
+from processor.preproc_manager import PreprocManager
 
 
 class MainWindow:
@@ -20,17 +21,22 @@ class MainWindow:
         self.master = master
 
         self.file_manager = FileManager()
+
+        # Ustawiamy preproc_manager na None, zainicjujemy go po wczytaniu pliku!
+        self.preproc_manager = None
+
         self.display_manager = DisplayManager()
         self.navigation_manager = NavigationManager()
+        self.analysis_manager = AnalysisManager()
 
         if sys.platform == 'win32':
-            #Windows
+            # Windows
             self.master.state('zoomed')
         elif sys.platform.startswith('linux'):
-            #Linux
+            # Linux
             self.master.attributes('-zoomed', True)
         else:
-            #macOS
+            # macOS
             self.master.attributes('-fullscreen', True)
             pass
 
@@ -50,7 +56,7 @@ class MainWindow:
         self.frame_buttons.pack_propagate(False)
         self.frame_buttons.pack(side=tk.BOTTOM, fill=tk.X)
 
-        #HEADER
+        # HEADER
         self.frame_header = tk.Frame(self.master, height=50, bg="#f0f0f0", bd=1, relief=tk.RIDGE)
         self.frame_header.pack(side=tk.TOP, fill=tk.X)
 
@@ -67,8 +73,9 @@ class MainWindow:
         self.label_fs_info = tk.Label(self.frame_header, text="Fs: --- Hz", font=("Arial", 10), bg="#f0f0f0")
         self.label_fs_info.pack(side=tk.RIGHT, padx=10, pady=5)
 
-        #ECG CHARTS
-        self.frame_ecg = ECGFrame(master=self.master, display_manager=self.display_manager)
+        # ECG CHARTS
+        self.frame_ecg = ECGFrame(master=self.master, display_manager=self.display_manager,
+                                  analysis_manager=self.analysis_manager, on_update_callback=self.update)
         self.frame_ecg.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         self.master.protocol("WM_DELETE_WINDOW", self.__on_closing)
@@ -98,7 +105,7 @@ class MainWindow:
         self.menu_analysis.add_command(
             label=localisation.name_resolver.get("menubar_analysis_perform_analysis"),
             state=tk.DISABLED,
-            command=None)
+            command=self.__toggle_analysis)
         self.menu_analysis.add_command(
             label=localisation.name_resolver.get("menubar_analysis_parameters"),
             state=tk.DISABLED,
@@ -118,8 +125,13 @@ class MainWindow:
             self.file_manager.open_file_system_gui()
 
             if self.file_manager.opened() and self.file_manager.signals:
+                fs = self.file_manager.sampling_frequency
+
+                self.preproc_manager = PreprocManager(sampling_frequency=fs)
+
                 self.display_manager.reset_to_defaults(self.file_manager.get_available_leads())
-                self.navigation_manager.reset_for_new_file(fs=self.file_manager.sampling_frequency,total_samples=self.file_manager.get_total_samples())
+                self.navigation_manager.reset_for_new_file(fs=fs, total_samples=self.file_manager.get_total_samples())
+                self.analysis_manager.reset_to_defaults()
                 self.update_header_info()
                 self.update()
                 self.menu_analysis.entryconfig(0, state=tk.NORMAL)
@@ -128,15 +140,12 @@ class MainWindow:
         except Exception as error_obj:
             messagebox.showerror(
                 title=localisation.name_resolver.get("messagebox_error"),
-                message=f"{localisation.name_resolver.get("messagebox_could_not_read_file")}:\n{str(object=error_obj)}"
+                message=f"{localisation.name_resolver.get('messagebox_could_not_read_file')}:\n{str(object=error_obj)}"
             )
 
     def update(self):
-        current_sample_float = self.navigation_manager.current_sample
-        from_sample = int(round(current_sample_float))
-
+        from_sample = self.navigation_manager.current_sample
         window_samples = int(round(self.navigation_manager.window_size_sec * self.navigation_manager.current_fs))
-
         to_sample = min(from_sample + window_samples, self.navigation_manager.total_samples)
 
         time_axis = self.file_manager.get_time_axis(from_sample=from_sample, to_sample=to_sample)
@@ -149,12 +158,42 @@ class MainWindow:
                 to_sample=to_sample
             )
 
+        # 2. Pobieranie danych dla analizy FFT
+        fft_dict_to_draw = {}
+        is_analysis_active = self.display_manager.show_frequency_analysis
+        has_valid_times = self.analysis_manager.analysis_start >= 0 and self.analysis_manager.analysis_end >= 0
+
+        # Upewniamy się, że wszystko jest gotowe do FFT
+        if is_analysis_active and has_valid_times and self.preproc_manager is not None:
+            fs = self.file_manager.sampling_frequency
+
+            # Zamiana sekund na indeksy próbek!
+            start_idx = int(round(self.analysis_manager.analysis_start * fs))
+            end_idx = int(round(self.analysis_manager.analysis_end * fs))
+
+            for lead in self.display_manager.displayed_leads:
+                # Pobieramy cały sygnał dla odnajdywania pików R
+                full_signal = self.file_manager.get_signal(channel=lead)
+                try:
+                    fft_result = self.preproc_manager.get_ft_portion(
+                        data=full_signal,
+                        start_idx=start_idx,
+                        end_idx=end_idx
+                    )
+                    fft_dict_to_draw[lead] = fft_result
+                except Exception as e:
+                    print(f"Ostrzeżenie FFT dla {lead}: {e}")
+                    fft_dict_to_draw[lead] = None
+
+        # 3. Aktualizacja płócien (Canvasów)
         self.frame_ecg.update_charts(
             time_axis=time_axis,
             signals_dict=signals_to_draw,
+            fft_data_dict=fft_dict_to_draw,
             overlap_sec=self.navigation_manager.overlap_sec,
             is_first=self.navigation_manager.is_first_window(),
-            is_last=self.navigation_manager.is_last_window())
+            is_last=self.navigation_manager.is_last_window()
+        )
 
         current_time_str = self.navigation_manager.get_current_time_string()
         self.frame_buttons.update_time_display(current_time_str)
@@ -202,7 +241,23 @@ class MainWindow:
     def __open_parameters_window(self):
         params_window = ParametersWindow(
             master=self.master,
-            display_manager=self.display_manager)
+            file_manager=self.file_manager,
+            display_manager=self.display_manager,
+            analysis_manager=self.analysis_manager,
+            navigation_manager=self.navigation_manager)
         params_window.grab_set()
         self.master.wait_window(params_window)
+
+        window_samples = int(round(self.navigation_manager.window_size_sec * self.navigation_manager.current_fs))
+        if self.navigation_manager.current_sample + window_samples > self.navigation_manager.total_samples:
+            self.navigation_manager.current_sample = max(0, self.navigation_manager.total_samples - window_samples)
+        self.update()
+
+    def __toggle_analysis(self):
+        self.display_manager.show_frequency_analysis = not self.display_manager.show_frequency_analysis
+
+        if not self.display_manager.show_frequency_analysis:
+            self.analysis_manager.analysis_start = -1.0
+            self.analysis_manager.analysis_end = -1.0
+
         self.update()
