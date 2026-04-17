@@ -28,6 +28,8 @@ class LeadCanvasSet(tk.Frame):
         self.ecg_canvas.update_chart(time_axis, amplitude_data, overlap_sec, is_first, is_last, analysis_start, analysis_end, analysis_overlap)
         if fft_data is not None:
             self.fft_canvas.update_chart(fft_data)
+            self.fft_canvas.update_vector_chart(fft_data)
+
 
     def set_height(self, new_height: float):
         self.ecg_canvas.set_height(new_height)
