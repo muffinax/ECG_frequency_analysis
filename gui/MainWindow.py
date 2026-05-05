@@ -91,12 +91,10 @@ class MainWindow:
             command=self.open_file_dialog)
         self.menu_file.add_command(
             label=localisation.name_resolver.get("menubar_file_save"),
-            state=tk.DISABLED,
-            command=None)
+            command=self.save_file)
         self.menu_file.add_command(
             label=localisation.name_resolver.get("menubar_file_save_as"),
-            state=tk.DISABLED,
-            command=None)
+            command=self.save_file_as)
         self.menu_file.add_separator()
         self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_exit"), command=self.__on_closing)
 
@@ -141,6 +139,24 @@ class MainWindow:
             messagebox.showerror(
                 title=localisation.name_resolver.get("messagebox_error"),
                 message=f"{localisation.name_resolver.get('messagebox_could_not_read_file')}:\n{str(object=error_obj)}"
+            )
+
+    def save_file(self) -> None:
+        try:
+            self.file_manager.save_file(self.file_manager.filepath)
+        except Exception as error_obj:
+            messagebox.showerror(
+                title=localisation.name_resolver.get("messagebox_error"),
+                message=f"{localisation.name_resolver.get('messagebox_could_not_save_file')}:\n{str(object=error_obj)}"
+            )
+
+    def save_file_as(self) -> None:
+        try:
+            self.file_manager.save_file_system_gui()
+        except Exception as error_obj:
+            messagebox.showerror(
+                title=localisation.name_resolver.get("messagebox_error"),
+                message=f"{localisation.name_resolver.get('messagebox_could_not_save_file')}:\n{str(object=error_obj)}"
             )
 
     def update(self):

@@ -12,6 +12,11 @@ from .input_manager_exception import InputManagerException
 
 from .wfdb_reader import WFDBReader
 from .edf_reader import EDFReader
+from .mldat_file_reader import MLDatFileReader
+
+from .machine_learning_data import MachineLearningData
+
+import traceback
 
 
 class FileManager:
@@ -25,6 +30,8 @@ class FileManager:
         self.comments: dict[str, str] = {}
         self.signals: dict[str, np.ndarray] = {}
         self.annotations: list[Annotation] = []
+        self.b_ml_opened: bool = False
+        self.machine_learning_data: list[MachineLearningData] = []
 
     def _get_reader_for_file(self, filepath: str) -> BaseECGReader:
         file_extension: str = os.path.splitext(p=filepath)[1].lower()
@@ -33,6 +40,8 @@ class FileManager:
             return WFDBReader()
         elif file_extension in ['.edf']:
             return EDFReader()
+        elif file_extension in ['.mldat']:
+            return MLDatFileReader()
         else:
             raise InputManagerException(
                 error_id="unsupported_file_type",
@@ -59,7 +68,7 @@ class FileManager:
             selected_filepath: str = filedialog.askopenfilename(
                 parent=root_window,
                 title="Select input ECG file",
-                filetypes=[("WFDB Header", "*.hea"), ("EDF", "*.edf"), ("All files", "*.*")]
+                filetypes=[("WFDB Header", "*.hea"), ("EDF", "*.edf"), ("MLDat", "*.mldat"), ("All files", "*.*")]
             )
 
             if selected_filepath:
@@ -233,3 +242,46 @@ class FileManager:
         self.comments.clear()
         self.signals.clear()
         self.annotations.clear()
+
+    def save_file(self, filepath: str) -> None:
+        if not self.b_opened:
+            raise InputManagerException(
+                error_id="no_file_opened",
+                error_description="Cannot save because no file is currently opened."
+            )
+
+        file_extension: str = os.path.splitext(p=filepath)[1].lower()
+
+        if file_extension in ['.hea', '.dat', '.atr', '']:
+            writer_instance = WFDBReader()
+            writer_instance.write(filepath=filepath, file_manager=self)
+        elif file_extension in ['.mldat']:
+            writer_instance = MLDatFileReader()
+            writer_instance.write(filepath=filepath, file_manager=self)
+        else:
+            raise InputManagerException(
+                error_id="unsupported_save_format",
+                error_description=f"Saving to extension '{file_extension}' is not supported yet."
+            )
+
+    def save_file_system_gui(self) -> None:
+        try:
+            root_window: tk.Tk = tk.Tk()
+            root_window.withdraw()
+
+            selected_filepath: str = filedialog.asksaveasfilename(
+                parent=root_window,
+                title="Save ECG file as",
+                defaultextension=".hea",
+                filetypes=[("WFDB Header", "*.hea"), ("MLDat", "*.mldat"), ("All files", "*.*")]
+            )
+
+            if selected_filepath:
+                self.save_file(filepath=selected_filepath)
+
+        except Exception as exception_object:
+            traceback.print_exc()
+            raise InputManagerException(
+                error_id="gui_save_error",
+                error_description=f"Failed to open save file dialog: {str(object=exception_object)}"
+            )
