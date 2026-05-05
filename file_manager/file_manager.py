@@ -55,6 +55,7 @@ class FileManager:
             reader_instance.read(filepath=filepath, file_manager=self)
 
         except Exception as exception_object:
+            traceback.print_exc()
             raise InputManagerException(
                 error_id="file_read_error",
                 error_description=f"Failed to process file: {str(object=exception_object)}"
@@ -171,7 +172,6 @@ class FileManager:
                     error_description="Cannot generate real time axis because base_datetime is not set."
                 )
             base_timestamp: float = self.base_datetime.timestamp()
-            # Returns an array of UNIX timestamps (floats) which is optimal for GUI plotting libraries
             return time_axis_relative + base_timestamp
 
         return time_axis_relative

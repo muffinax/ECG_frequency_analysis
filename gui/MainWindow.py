@@ -1,6 +1,7 @@
 import os
 import sys
 import tkinter as tk
+import traceback
 from tkinter import messagebox
 
 from gui.AnnotationFrame import AnnotationFrame
@@ -136,6 +137,7 @@ class MainWindow:
                 self.menu_analysis.entryconfig(1, state=tk.NORMAL)
 
         except Exception as error_obj:
+            traceback.print_exc()
             messagebox.showerror(
                 title=localisation.name_resolver.get("messagebox_error"),
                 message=f"{localisation.name_resolver.get('messagebox_could_not_read_file')}:\n{str(object=error_obj)}"
@@ -223,6 +225,7 @@ class MainWindow:
 
     def update_header_info(self):
         if self.file_manager.opened():
+            print(self.file_manager.filepath)
             filename = os.path.basename(self.file_manager.filepath)
             fs = self.file_manager.sampling_frequency
             start_date = self.file_manager.base_datetime.strftime(

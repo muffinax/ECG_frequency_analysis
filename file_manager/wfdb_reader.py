@@ -18,6 +18,7 @@ class WFDBReader(BaseECGReader):
 
     def read(self, filepath: str, file_manager: "FileManager") -> None:
         file_manager.clear()
+        file_manager.filepath = filepath
         record_path: str = os.path.splitext(p=filepath)[0]
 
         try:
@@ -75,7 +76,6 @@ class WFDBReader(BaseECGReader):
                 subtype_array: np.ndarray | list[int] = getattr(wfdb_annotation, "sub", [0] * total_annotations)
                 numeric_array: np.ndarray | list[int] = getattr(wfdb_annotation, "num", [0] * total_annotations)
 
-                # Zgodnie ze specyfikacją WFDB, custom_labels to JEDNA globalna lista dla całego pliku
                 custom_labels_list: list[str] | None = getattr(wfdb_annotation, "custom_labels", None)
 
                 for index_value in range(total_annotations):
@@ -95,18 +95,15 @@ class WFDBReader(BaseECGReader):
 
                     parsed_custom_label: str | None = None
 
-                    # 1. Dekodowanie Custom Labels prosto do zmiennej (używając num jako indeksu)
                     if custom_labels_list is not None and len(custom_labels_list) > 0:
                         if sym == '"' and 0 <= parsed_numeric < len(custom_labels_list):
                             parsed_custom_label = custom_labels_list[parsed_numeric]
                             ann_type = EAnnotationType.CUSTOM
-                            # Czyścimy numeric_value, bo pole 'num' w tym wypadku zrobiło za wskaźnik etykiety
                             parsed_numeric = 0
 
                     annotation_duration = 0
                     annotation_origin = getattr(EAnnotationOrigin, "EXTERNAL", EAnnotationOrigin(0))
 
-                    # 2. Bezpieczne dekodowanie tokenu Duration/Origin
                     rest_note = note_value
                     if rest_note.startswith("ECG"):
                         for length in [8, 7, 4]:
@@ -142,17 +139,16 @@ class WFDBReader(BaseECGReader):
                                                 pass
                                         break
 
-                    # 3. Złożenie czystego obiektu Annotation
                     parsed_annotation: Annotation = Annotation(
                         sample_index=int(wfdb_annotation.sample[index_value]),
                         annotation_duration=annotation_duration,
                         annotation_origin=annotation_origin,
                         annotation_type=ann_type,
-                        auxiliary_note=rest_note,  # <--- Tutaj trafia wyłącznie czysty string notatki
+                        auxiliary_note=rest_note,
                         channel=assigned_lead_type,
                         subtype=parsed_subtype,
                         numeric_value=parsed_numeric,
-                        custom_label=parsed_custom_label  # <--- Etykieta jest oficjalnie i dumnie u siebie
+                        custom_label=parsed_custom_label
                     )
                     file_manager.annotations.append(parsed_annotation)
 
@@ -173,7 +169,6 @@ class WFDBReader(BaseECGReader):
         write_dir = os.path.dirname(record_path) or '.'
         rec_name = os.path.basename(record_path)
 
-        # 1. Zapis sygnałów
         sig_names = list(file_manager.signals.keys())
         n_sig = len(sig_names)
 
@@ -211,7 +206,6 @@ class WFDBReader(BaseECGReader):
             )
             record.wrheader(write_dir=write_dir)
 
-        # 2. Zapis adnotacji
         if file_manager.annotations:
             samples = []
             symbols = []
@@ -222,13 +216,11 @@ class WFDBReader(BaseECGReader):
             unique_labels = []
 
             for ann in file_manager.annotations:
-                # 1. Bezwzględnie ignorujemy EDF i UNKNOWN
                 if ann.annotation_type in [EAnnotationType.EDF, EAnnotationType.UNKNOWN]:
                     continue
 
                 samples.append(ann.sample_index)
 
-                # 2. Logika symboli (bez konfliktu w custom_labels)
                 is_custom = (ann.annotation_type == EAnnotationType.CUSTOM and
                              ann.custom_label and ann.custom_label.strip() != "")
 
@@ -246,7 +238,6 @@ class WFDBReader(BaseECGReader):
 
                 symbols.append(sym)
 
-                # 3. Kodowanie duration i origin
                 dur = getattr(ann, 'annotation_duration', 0)
                 orig_val = ann.annotation_origin.value if hasattr(ann.annotation_origin, 'value') else 0
 
@@ -271,7 +262,6 @@ class WFDBReader(BaseECGReader):
 
                 final_note = ann.auxiliary_note or ""
 
-                # NOWOŚĆ: Jeśli to adnotacja customowa, ładujemy etykietę bezpiecznie do aux_note
                 if is_custom:
                     if final_note:
                         final_note = f"[{ann.custom_label}] {final_note}"
@@ -298,7 +288,6 @@ class WFDBReader(BaseECGReader):
             final_subs = np.array(subs) if any(subs) else None
             final_nums = np.array(nums) if any(nums) else None
 
-            # CAŁKOWICIE POZBYWAMY SIĘ PROBLEMATYCZNEGO custom_labels
             ann_obj = wfdb.Annotation(
                 record_name=rec_name,
                 extension="atr",
@@ -308,6 +297,6 @@ class WFDBReader(BaseECGReader):
                 chan=final_chans,
                 subtype=final_subs,
                 num=final_nums,
-                custom_labels=None  # <- WFDB nie będzie już rzucać wyjątków walidacji!
+                custom_labels=None
             )
             ann_obj.wrann(write_dir=write_dir)
