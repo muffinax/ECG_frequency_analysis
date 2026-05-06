@@ -144,9 +144,9 @@ class MainWindow:
             )
 
     def update(self):
-        from_sample = self.navigation_manager.current_sample
+        from_sample = int(round(self.navigation_manager.current_sample))
         window_samples = int(round(self.navigation_manager.window_size_sec * self.navigation_manager.current_fs))
-        to_sample = min(from_sample + window_samples, self.navigation_manager.total_samples)
+        to_sample = int(min(from_sample + window_samples, self.navigation_manager.total_samples))
 
         time_axis = self.file_manager.get_time_axis(from_sample=from_sample, to_sample=to_sample)
 
@@ -158,7 +158,7 @@ class MainWindow:
                 to_sample=to_sample
             )
 
-        # 2. Pobieranie danych dla analizy FFT
+        #Pobieranie danych dla analizy FFT
         fft_dict_to_draw = {}
         is_analysis_active = self.display_manager.show_frequency_analysis
         has_valid_times = self.analysis_manager.analysis_start >= 0 and self.analysis_manager.analysis_end >= 0
@@ -185,7 +185,7 @@ class MainWindow:
                     print(f"Ostrzeżenie FFT dla {lead}: {e}")
                     fft_dict_to_draw[lead] = None
 
-        # 3. Aktualizacja płócien (Canvasów)
+        # Aktualizacja płócien (Canvas)
         self.frame_ecg.update_charts(
             time_axis=time_axis,
             signals_dict=signals_to_draw,
@@ -198,11 +198,13 @@ class MainWindow:
         current_time_str = self.navigation_manager.get_current_time_string()
         self.frame_buttons.update_time_display(current_time_str)
 
-        annotations_in_window = self.file_manager.get_annotations(from_sample=from_sample, to_sample=to_sample)
-        fs = self.file_manager.sampling_frequency
-        self.frame_annotations.update_annotations(
-            annotations=annotations_in_window,
-            sample_rate=fs
+        all_annotations = self.file_manager.annotations
+        window_annotations = self.file_manager.get_annotations(from_sample=from_sample, to_sample=to_sample)
+
+        self.frame_annotations.update_data(
+            all_annotations=all_annotations,
+            window_annotations=window_annotations,
+            sample_rate=self.file_manager.sampling_frequency
         )
 
     def update_header_info(self):

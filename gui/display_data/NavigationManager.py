@@ -3,7 +3,7 @@ import localisation
 
 class NavigationManager:
     def __init__(self):
-        self.current_sample: int = 0
+        self.current_sample: float = 0.0
         self.window_size_sec: float = 10.0
         self.current_fs: float = 0.0
         self.total_samples: int = 0

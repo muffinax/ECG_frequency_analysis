@@ -89,12 +89,10 @@ class SettingsFrame(tk.Frame):
         is_playing = self.navigation_manager.toggle_playback()
 
         if is_playing:
-            # Zmień ikonkę na pauzę (znak pauzy w Unicode)
-            self.play_pause_button.config(text="\u23F8")
+            self.play_pause_button.config(text="\u23F8")  # Pauza
             self._playback_loop()
         else:
-            # Zmień ikonkę z powrotem na odtwarzanie (znak play)
-            self.play_pause_button.config(text="\u25B6")
+            self.play_pause_button.config(text="\u25B6")  # Play
 
     def _playback_loop(self):
         delay_ms = 50
@@ -108,5 +106,3 @@ class SettingsFrame(tk.Frame):
                 self.after(delay_ms, self._playback_loop)
             else:
                 self.play_pause_button.config(text="\u25B6")
-
-
