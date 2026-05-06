@@ -24,11 +24,28 @@ class LeadCanvasSet(tk.Frame):
     def update_set_data(self, time_axis, amplitude_data, fft_data, overlap_sec=0.0, is_first=False,
                         is_last=False, analysis_start=-1.0, analysis_end=-1.0, analysis_overlap=0.0, is_analysis_active=False):
 
-        self.ecg_canvas.is_analysis_enabled = is_analysis_active
-        self.ecg_canvas.update_chart(time_axis, amplitude_data, overlap_sec, is_first, is_last, analysis_start, analysis_end, analysis_overlap)
+        vis_start = analysis_start
+        vis_end = analysis_end
+        fft_data_to_pass = None
+
         if fft_data is not None:
-            self.fft_canvas.update_chart(fft_data)
-            self.fft_canvas.update_vector_chart(fft_data)
+            if len(fft_data) == 4:
+                freqs, magnitudes, snapped_start, snapped_end = fft_data
+                fft_data_to_pass = (freqs, magnitudes)
+                
+                if snapped_start >= 0 and snapped_end >= 0:
+                    vis_start = snapped_start
+                    vis_end = snapped_end
+            else:
+                fft_data_to_pass = fft_data
+
+        self.ecg_canvas.is_analysis_enabled = is_analysis_active
+        
+        self.ecg_canvas.update_chart(time_axis, amplitude_data, overlap_sec, is_first, is_last, vis_start, vis_end, analysis_overlap)
+        
+        if fft_data_to_pass is not None:
+            self.fft_canvas.update_chart(fft_data_to_pass)
+            self.fft_canvas.update_vector_chart(fft_data_to_pass)
 
 
     def set_height(self, new_height: float):

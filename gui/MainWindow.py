@@ -180,7 +180,13 @@ class MainWindow:
                         start_idx=start_idx,
                         end_idx=end_idx
                     )
-                    fft_dict_to_draw[lead] = fft_result
+
+                    if len(fft_result) == 4:
+                        freqs, mags, actual_start_idx, actual_end_idx = fft_result
+                        fft_dict_to_draw[lead] = (freqs, mags, actual_start_idx / fs, actual_end_idx / fs)
+                    else:
+                        fft_dict_to_draw[lead] = fft_result
+
                 except Exception as e:
                     print(f"Ostrzeżenie FFT dla {lead}: {e}")
                     fft_dict_to_draw[lead] = None

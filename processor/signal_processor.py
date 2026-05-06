@@ -41,7 +41,7 @@ class SignalProcessor:
         freqs = np.fft.rfftfreq(len(segment), 1 / self.fs)
         magnitude = np.abs(fft_vals)
         
-        return freqs, magnitude
+        return freqs, magnitude, actual_start_idx, actual_end_idx
 
     def get_beat_synchronous_stft(self, data: np.ndarray):
         """Computes STFT overlapping between R_peak[i] and R_peak[i+2]."""
