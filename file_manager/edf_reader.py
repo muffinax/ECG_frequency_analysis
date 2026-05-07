@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 class EDFReader(BaseECGReader):
 
     def read(self, filepath: str, file_manager: "FileManager") -> None:
+        file_manager.clear()
         try:
             with pyedflib.EdfReader(filepath) as edf_record:
 
