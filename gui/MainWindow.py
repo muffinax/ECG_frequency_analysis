@@ -110,7 +110,8 @@ class MainWindow:
         self.menu_analysis.add_command(
             label="Analiza dla całego pliku",
             state=tk.DISABLED,
-            command=self.__perform_full_file_analysis  # Zastąpiono starego toggle'a
+            command=None
+            #command=self.__perform_full_file_analysis
         )
         self.menu_analysis.add_command(
             label=localisation.name_resolver.get("menubar_analysis_parameters"),
@@ -330,14 +331,7 @@ class MainWindow:
         self.update()
 
     def __perform_full_file_analysis(self):
-        if not self.file_manager.opened():
-            return
-
-        total_duration = self.file_manager.get_duration_seconds()
-        self.analysis_manager.analysis_start = 0.0
-        self.analysis_manager.analysis_end = total_duration
-        self.display_manager.show_frequency_analysis = True
-        self.update()
+        return
 
     def __on_developer_mode_toggled(self):
         # Ta metoda odpali się, kiedy użyjesz przełącznika Tryb Developera
