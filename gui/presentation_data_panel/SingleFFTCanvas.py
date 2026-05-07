@@ -59,7 +59,7 @@ class SingleFFTCanvas(tk.Frame):
 
         freqs, complex_vals = fft_data
 
-        # Pomijamy 0Hz i bierzemy kolejne 40 prążków FFT
+        # Pomijamy 0Hz i bierzemy kolejne 60 prążków FFT
         if len(freqs) > 2:
             freqs = freqs[2:62]
             complex_vals = complex_vals[2:62]
@@ -92,4 +92,9 @@ class SingleFFTCanvas(tk.Frame):
         self.ax2.grid(True, linestyle=':', alpha=0.6)
 
         self.figure.subplots_adjust(left=0.1, right=0.98, top=0.85, bottom=0.25)
+        self.canvas.draw_idle()
+
+    def set_height(self, new_height_inches: float):
+        pixel_height = int(new_height_inches * self.figure.dpi)
+        self.canvas_widget.configure(height=pixel_height)
         self.canvas.draw_idle()
