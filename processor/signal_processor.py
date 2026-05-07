@@ -39,9 +39,8 @@ class SignalProcessor:
         
         fft_vals = np.fft.rfft(segment_windowed)
         freqs = np.fft.rfftfreq(len(segment), 1 / self.fs)
-        magnitude = np.abs(fft_vals)
         
-        return freqs, magnitude
+        return freqs, fft_vals, actual_start_idx, actual_end_idx
 
     def get_beat_synchronous_stft(self, data: np.ndarray):
         """Computes STFT overlapping between R_peak[i] and R_peak[i+2]."""
@@ -57,7 +56,8 @@ class SignalProcessor:
                 max_len = window_len
                 
         nfft = int(2 ** np.ceil(np.log2(max_len)))
-        magnitudes = []
+        
+        complex_stft = []
         times = []
 
         for i in range(len(r_peaks) - 2):
@@ -70,10 +70,12 @@ class SignalProcessor:
             segment_windowed = segment * window
             
             fft_vals = np.fft.rfft(segment_windowed, n=nfft)
-            magnitudes.append(np.abs(fft_vals))
+            complex_stft.append(fft_vals)
             times.append(((start_idx + end_idx) / 2) / self.fs)
             
         freqs = np.fft.rfftfreq(nfft, 1 / self.fs)
-        stft_matrix = np.column_stack(magnitudes) 
+        
+        # Zlepienie wyników zespolonych w macierz
+        stft_matrix = np.column_stack(complex_stft) 
         
         return freqs, np.array(times), stft_matrix

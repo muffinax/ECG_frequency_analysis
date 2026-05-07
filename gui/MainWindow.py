@@ -11,6 +11,7 @@ from gui.ECGFrame import ECGFrame
 from gui.SettingsFrame import SettingsFrame
 from gui.display_data.NavigationManager import NavigationManager
 from gui.parameters_window.ParametersWindow import ParametersWindow
+from gui.HelpWindow import HelpWindow
 
 from file_manager import FileManager
 import localisation
@@ -22,8 +23,6 @@ class MainWindow:
         self.master = master
 
         self.file_manager = FileManager()
-
-        # Ustawiamy preproc_manager na None, zainicjujemy go po wczytaniu pliku!
         self.preproc_manager = None
 
         self.display_manager = DisplayManager()
@@ -31,20 +30,27 @@ class MainWindow:
         self.analysis_manager = AnalysisManager()
 
         if sys.platform == 'win32':
-            # Windows
             self.master.state('zoomed')
         elif sys.platform.startswith('linux'):
-            # Linux
             self.master.attributes('-zoomed', True)
         else:
-            # macOS
             self.master.attributes('-fullscreen', True)
-            pass
 
         self.master.title(localisation.name_resolver.get("main_title"))
+
+        # NOWE: Zmienna przechowująca stan Trybu Developera (True/False)
+        self.developer_mode_var = tk.BooleanVar(value=False)
+
         self.__create_menu()
 
-        self.frame_annotations = AnnotationFrame(master=self.master, width=600)
+        self.chosen_annotation = -1
+
+        self.frame_annotations = AnnotationFrame(
+            master=self.master,
+            on_filter_changed_callback=self.update,
+            on_annotation_click_callback=self.on_annotation_clicked,
+            width=600
+        )
         self.frame_annotations.pack_propagate(False)
         self.frame_annotations.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -52,6 +58,8 @@ class MainWindow:
             master=self.master,
             navigation_manager=self.navigation_manager,
             on_update_callback=self.update,
+            on_prev_annotation_callback=lambda: self.jump_annotation(-1),
+            on_next_annotation_callback=lambda: self.jump_annotation(1),
             height=80
         )
         self.frame_buttons.pack_propagate(False)
@@ -84,38 +92,47 @@ class MainWindow:
     def __create_menu(self) -> None:
         menu_bar = tk.Menu(master=self.master)
 
+        # MENU: Plik
         self.menu_file = tk.Menu(master=menu_bar, tearoff=0)
-        menu_bar.add_cascade(label=localisation.name_resolver.get("menubar_file"), menu=self.menu_file)
-
-        self.menu_file.add_command(
-            label=localisation.name_resolver.get("menubar_file_open"),
-            command=self.open_file_dialog)
-        self.menu_file.add_command(
-            label=localisation.name_resolver.get("menubar_file_save"),
-            command=self.save_file)
-        self.menu_file.add_command(
-            label=localisation.name_resolver.get("menubar_file_save_as"),
-            command=self.save_file_as)
+        menu_bar.add_cascade(label=localisation.name_resolver.get("menubar_file") or "Plik", menu=self.menu_file)
+        self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_open"),
+                                   command=self.open_file_dialog)
+        self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_save"),
+                                   command=self.save_file)
+        self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_save_as"),
+                                   command=self.save_file_as)
         self.menu_file.add_separator()
         self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_exit"), command=self.__on_closing)
 
+        # MENU: Analiza (Zmodyfikowane)
         self.menu_analysis = tk.Menu(master=menu_bar, tearoff=0)
-        menu_bar.add_cascade(label=localisation.name_resolver.get("menubar_analysis"), menu=self.menu_analysis)
+        menu_bar.add_cascade(label=localisation.name_resolver.get("menubar_analysis") or "Analiza",
+                             menu=self.menu_analysis)
         self.menu_analysis.add_command(
-            label=localisation.name_resolver.get("menubar_analysis_perform_analysis"),
+            label="Analiza dla całego pliku",
             state=tk.DISABLED,
-            command=self.__toggle_analysis)
+            command=None
+            #command=self.__perform_full_file_analysis
+        )
         self.menu_analysis.add_command(
             label=localisation.name_resolver.get("menubar_analysis_parameters"),
             state=tk.DISABLED,
-            command=self.__open_parameters_window)
+            command=self.__open_parameters_window
+        )
 
+        # MENU: Opcje (Zupełnie nowe)
+        self.menu_options = tk.Menu(master=menu_bar, tearoff=0)
+        menu_bar.add_cascade(label="Opcje", menu=self.menu_options)
+        self.menu_options.add_checkbutton(
+            label="Tryb Developera",
+            variable=self.developer_mode_var,
+            command=self.__on_developer_mode_toggled
+        )
+
+        # MENU: Pomoc
         self.menu_help = tk.Menu(master=menu_bar, tearoff=0)
         menu_bar.add_cascade(label=localisation.name_resolver.get("menubar_help"), menu=self.menu_help)
-
-        self.menu_help.add_command(
-            label=localisation.name_resolver.get("menubar_help_keys"),
-            command=None)
+        self.menu_help.add_command(label="Instrukcja obsługi", command=self.__show_help_window)
 
         self.master.config(menu=menu_bar)
 
@@ -125,16 +142,22 @@ class MainWindow:
 
             if self.file_manager.opened() and self.file_manager.signals:
                 fs = self.file_manager.sampling_frequency
-
                 self.preproc_manager = PreprocManager(sampling_frequency=fs)
 
                 self.display_manager.reset_to_defaults(self.file_manager.get_available_leads())
+
+                self.display_manager.show_frequency_analysis = True
+
                 self.navigation_manager.reset_for_new_file(fs=fs, total_samples=self.file_manager.get_total_samples())
                 self.analysis_manager.reset_to_defaults()
-                self.update_header_info()
-                self.update()
+
+                # Odblokowanie przycisków analizy
                 self.menu_analysis.entryconfig(0, state=tk.NORMAL)
                 self.menu_analysis.entryconfig(1, state=tk.NORMAL)
+
+                self.chosen_annotation = -1
+                self.update_header_info()
+                self.update()
 
         except Exception as error_obj:
             traceback.print_exc()
@@ -162,11 +185,12 @@ class MainWindow:
             )
 
     def update(self):
-        from_sample = self.navigation_manager.current_sample
+        from_sample = int(round(self.navigation_manager.current_sample))
         window_samples = int(round(self.navigation_manager.window_size_sec * self.navigation_manager.current_fs))
-        to_sample = min(from_sample + window_samples, self.navigation_manager.total_samples)
+        to_sample = int(min(from_sample + window_samples, self.navigation_manager.total_samples))
 
         time_axis = self.file_manager.get_time_axis(from_sample=from_sample, to_sample=to_sample)
+        fs = self.file_manager.sampling_frequency
 
         signals_to_draw = {}
         for lead in self.display_manager.displayed_leads:
@@ -176,21 +200,15 @@ class MainWindow:
                 to_sample=to_sample
             )
 
-        # 2. Pobieranie danych dla analizy FFT
         fft_dict_to_draw = {}
         is_analysis_active = self.display_manager.show_frequency_analysis
         has_valid_times = self.analysis_manager.analysis_start >= 0 and self.analysis_manager.analysis_end >= 0
 
-        # Upewniamy się, że wszystko jest gotowe do FFT
         if is_analysis_active and has_valid_times and self.preproc_manager is not None:
-            fs = self.file_manager.sampling_frequency
-
-            # Zamiana sekund na indeksy próbek!
             start_idx = int(round(self.analysis_manager.analysis_start * fs))
             end_idx = int(round(self.analysis_manager.analysis_end * fs))
 
             for lead in self.display_manager.displayed_leads:
-                # Pobieramy cały sygnał dla odnajdywania pików R
                 full_signal = self.file_manager.get_signal(channel=lead)
                 try:
                     fft_result = self.preproc_manager.get_ft_portion(
@@ -198,30 +216,99 @@ class MainWindow:
                         start_idx=start_idx,
                         end_idx=end_idx
                     )
-                    fft_dict_to_draw[lead] = fft_result
+
+                    if len(fft_result) == 4:
+                        freqs, mags, actual_start_idx, actual_end_idx = fft_result
+                        fft_dict_to_draw[lead] = (freqs, mags, actual_start_idx / fs, actual_end_idx / fs)
+                    else:
+                        fft_dict_to_draw[lead] = fft_result
+
                 except Exception as e:
                     print(f"Ostrzeżenie FFT dla {lead}: {e}")
                     fft_dict_to_draw[lead] = None
 
-        # 3. Aktualizacja płócien (Canvasów)
+        annotations_in_window = self.file_manager.get_annotations(from_sample=from_sample, to_sample=to_sample)
+
+        self.frame_annotations.update_data(
+            all_annotations=self.file_manager.annotations,
+            window_annotations=annotations_in_window,
+            sample_rate=fs
+        )
+
+        current_filter = self.frame_annotations.filter_var.get()
+        filter_all = self.frame_annotations.atList.filter_all_text
+        annotation_times_to_draw = []
+
+        if fs > 0:
+            for ann in annotations_in_window:
+                if current_filter in ("", filter_all) or ann.annotation_type.to_string() == current_filter:
+                    annotation_times_to_draw.append(ann.sample_index / fs)
+
+        chosen_time_sec = self.chosen_annotation / fs if (self.chosen_annotation != -1 and fs > 0) else None
+
         self.frame_ecg.update_charts(
             time_axis=time_axis,
             signals_dict=signals_to_draw,
             fft_data_dict=fft_dict_to_draw,
             overlap_sec=self.navigation_manager.overlap_sec,
             is_first=self.navigation_manager.is_first_window(),
-            is_last=self.navigation_manager.is_last_window()
+            is_last=self.navigation_manager.is_last_window(),
+            annotation_times=annotation_times_to_draw,
+            highlighted_time=chosen_time_sec
         )
 
         current_time_str = self.navigation_manager.get_current_time_string()
         self.frame_buttons.update_time_display(current_time_str)
 
-        annotations_in_window = self.file_manager.get_annotations(from_sample=from_sample, to_sample=to_sample)
+    def jump_annotation(self, direction: int):
+        all_anns = self.file_manager.annotations
         fs = self.file_manager.sampling_frequency
-        self.frame_annotations.update_annotations(
-            annotations=annotations_in_window,
-            sample_rate=fs
-        )
+
+        if fs <= 0 or not all_anns:
+            return
+
+        current_filter = self.frame_annotations.filter_var.get()
+        filter_all = self.frame_annotations.atList.filter_all_text
+
+        filtered_anns = []
+        for ann in all_anns:
+            if current_filter in ("", filter_all) or ann.annotation_type.to_string() == current_filter:
+                filtered_anns.append(ann)
+
+        if not filtered_anns:
+            return
+
+        current_idx = -1
+        if self.chosen_annotation != -1:
+            for i, ann in enumerate(filtered_anns):
+                if ann.sample_index == self.chosen_annotation:
+                    current_idx = i
+                    break
+
+        if current_idx == -1:
+            current_start_sample = self.navigation_manager.current_sample
+            for i, ann in enumerate(filtered_anns):
+                if ann.sample_index >= current_start_sample:
+                    if direction == 1:
+                        target_idx = i
+                    else:
+                        target_idx = max(0, i - 1)
+                    break
+            else:
+                target_idx = len(filtered_anns) - 1
+        else:
+            target_idx = current_idx + direction
+
+        if target_idx < 0:
+            target_idx = 0
+        elif target_idx >= len(filtered_anns):
+            target_idx = len(filtered_anns) - 1
+
+        target_ann = filtered_anns[target_idx]
+        self.chosen_annotation = target_ann.sample_index
+
+        self.navigation_manager.center_on_sample(target_ann.sample_index)
+        self.update()
 
     def update_header_info(self):
         if self.file_manager.opened():
@@ -230,12 +317,7 @@ class MainWindow:
             fs = self.file_manager.sampling_frequency
             start_date = self.file_manager.base_datetime.strftime(
                 "%Y-%m-%d %H:%M:%S") if self.file_manager.base_datetime else "Brak daty"
-
             total_sec = self.file_manager.get_duration_seconds()
-            # hours = int(total_sec // 3600)
-            # minutes = int((total_sec % 3600) // 60)
-            # seconds = int(total_sec % 60)
-            # duration_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
             self.label_file_info.config(text=f"Plik: {filename}")
             self.label_fs_info.config(text=f"Fs: {fs} Hz")
@@ -246,16 +328,13 @@ class MainWindow:
                 patient_name = next(iter(self.file_manager.comments.values()), "Nieznany")
             self.label_patient_name.config(text=f"Pacjent: {patient_name}")
 
-            self.label_date_info.config(text=f"Data: {start_date}")
-            if self.file_manager.base_datetime:
-                date_str = self.file_manager.base_datetime.strftime("%d.%m.%Y %H:%M")
-            else:
-                date_str = "Brak daty"
+            date_str = self.file_manager.base_datetime.strftime(
+                "%d.%m.%Y %H:%M") if self.file_manager.base_datetime else "Brak daty"
             self.label_date_info.config(text=f"Data: {date_str}")
 
     def __on_closing(self):
-        self.master.quit()  # Stops mainloop
-        self.master.destroy()  # Destroys widgets
+        self.master.quit()
+        self.master.destroy()
 
     def __open_parameters_window(self):
         params_window = ParametersWindow(
@@ -272,11 +351,23 @@ class MainWindow:
             self.navigation_manager.current_sample = max(0, self.navigation_manager.total_samples - window_samples)
         self.update()
 
-    def __toggle_analysis(self):
-        self.display_manager.show_frequency_analysis = not self.display_manager.show_frequency_analysis
+    def __perform_full_file_analysis(self):
+        return
 
-        if not self.display_manager.show_frequency_analysis:
-            self.analysis_manager.analysis_start = -1.0
-            self.analysis_manager.analysis_end = -1.0
+    def __on_developer_mode_toggled(self):
+        # Ta metoda odpali się, kiedy użyjesz przełącznika Tryb Developera
+        is_dev = self.developer_mode_var.get()
+        if is_dev:
+            print("Tryb Developera włączony. Możesz tu dodać odblokowanie ukrytych przycisków!")
+        else:
+            print("Tryb Developera wyłączony.")
 
+    def on_annotation_clicked(self, chosen_index: int):
+        self.chosen_annotation = chosen_index
         self.update()
+
+    def __show_help_window(self):
+        if hasattr(self, 'help_window') and self.help_window.winfo_exists():
+            self.help_window.lift()
+        else:
+            self.help_window = HelpWindow(self.master)
