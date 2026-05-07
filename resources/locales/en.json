@@ -91,5 +91,6 @@
     "parameters_window_go_button": "Go",
 
     "messagebox_error": "Error",
-    "messagebox_could_not_read_file": "Can't read the file"
+    "messagebox_could_not_read_file": "Can't read the file",
+    "messagebox_could_not_save_file": "Can't save the file"
 }

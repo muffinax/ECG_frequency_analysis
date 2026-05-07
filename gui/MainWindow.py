@@ -1,6 +1,7 @@
 import os
 import sys
 import tkinter as tk
+import traceback
 from tkinter import messagebox
 
 from gui.AnnotationFrame import AnnotationFrame
@@ -29,10 +30,13 @@ class MainWindow:
         self.analysis_manager = AnalysisManager()
 
         if sys.platform == 'win32':
+            # Windows
             self.master.state('zoomed')
         elif sys.platform.startswith('linux'):
+            # Linux
             self.master.attributes('-zoomed', True)
         else:
+            # macOS
             self.master.attributes('-fullscreen', True)
 
         self.master.title(localisation.name_resolver.get("main_title"))
@@ -93,13 +97,17 @@ class MainWindow:
 
         # MENU: Plik
         self.menu_file = tk.Menu(master=menu_bar, tearoff=0)
-        menu_bar.add_cascade(label=localisation.name_resolver.get("menubar_file") or "Plik", menu=self.menu_file)
-        self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_open"),
-                                   command=self.open_file_dialog)
-        self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_save"), state=tk.DISABLED,
-                                   command=None)
-        self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_save_as"), state=tk.DISABLED,
-                                   command=None)
+        menu_bar.add_cascade(label=localisation.name_resolver.get("menubar_file"), menu=self.menu_file)
+
+        self.menu_file.add_command(
+            label=localisation.name_resolver.get("menubar_file_open"),
+            command=self.open_file_dialog)
+        self.menu_file.add_command(
+            label=localisation.name_resolver.get("menubar_file_save"),
+            command=self.save_file)
+        self.menu_file.add_command(
+            label=localisation.name_resolver.get("menubar_file_save_as"),
+            command=self.save_file_as)
         self.menu_file.add_separator()
         self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_exit"), command=self.__on_closing)
 
@@ -159,9 +167,28 @@ class MainWindow:
                 self.update()
 
         except Exception as error_obj:
+            traceback.print_exc()
             messagebox.showerror(
                 title=localisation.name_resolver.get("messagebox_error"),
                 message=f"{localisation.name_resolver.get('messagebox_could_not_read_file')}:\n{str(object=error_obj)}"
+            )
+
+    def save_file(self) -> None:
+        try:
+            self.file_manager.save_file(self.file_manager.filepath)
+        except Exception as error_obj:
+            messagebox.showerror(
+                title=localisation.name_resolver.get("messagebox_error"),
+                message=f"{localisation.name_resolver.get('messagebox_could_not_save_file')}:\n{str(object=error_obj)}"
+            )
+
+    def save_file_as(self) -> None:
+        try:
+            self.file_manager.save_file_system_gui()
+        except Exception as error_obj:
+            messagebox.showerror(
+                title=localisation.name_resolver.get("messagebox_error"),
+                message=f"{localisation.name_resolver.get('messagebox_could_not_save_file')}:\n{str(object=error_obj)}"
             )
 
     def update(self):
@@ -292,6 +319,7 @@ class MainWindow:
 
     def update_header_info(self):
         if self.file_manager.opened():
+            print(self.file_manager.filepath)
             filename = os.path.basename(self.file_manager.filepath)
             fs = self.file_manager.sampling_frequency
             start_date = self.file_manager.base_datetime.strftime(
