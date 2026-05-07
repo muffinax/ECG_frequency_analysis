@@ -22,12 +22,14 @@ class LeadCanvasSet(tk.Frame):
             self.fft_canvas.pack_forget()
 
     def update_set_data(self, time_axis, amplitude_data, fft_data, overlap_sec=0.0, is_first=False,
-                        is_last=False, analysis_start=-1.0, analysis_end=-1.0, analysis_overlap=0.0, is_analysis_active=False):
+                        is_last=False, analysis_start=-1.0, analysis_end=-1.0, analysis_overlap=0.0, is_analysis_active=False, annotation_times=None, highlighted_time=None):
 
         vis_start = analysis_start
         vis_end = analysis_end
         fft_data_to_pass = None
 
+        self.ecg_canvas.is_analysis_enabled = is_analysis_active
+        self.ecg_canvas.update_chart(time_axis, amplitude_data, overlap_sec, is_first, is_last, analysis_start, analysis_end, analysis_overlap, annotation_times, highlighted_time)
         if fft_data is not None:
             if len(fft_data) == 4:
                 freqs, magnitudes, snapped_start, snapped_end = fft_data

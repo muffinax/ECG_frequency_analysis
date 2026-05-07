@@ -3,7 +3,7 @@ import localisation
 
 class NavigationManager:
     def __init__(self):
-        self.current_sample: int = 0
+        self.current_sample: float = 0.0
         self.window_size_sec: float = 10.0
         self.current_fs: float = 0.0
         self.total_samples: int = 0
@@ -127,3 +127,21 @@ class NavigationManager:
 
         self.current_sample += step_samples
         return True
+
+    def center_on_sample(self, target_sample: float):
+        if self.current_fs <= 0:
+            return
+
+        window_samples = self.window_size_sec * self.current_fs
+        # Ustawiamy początek okna tak, żeby adnotacja wypadła w połowie szerokości
+        new_start = target_sample - (window_samples / 2.0)
+
+        last_possible_start = max(0.0, float(self.total_samples) - window_samples)
+
+        # Pilnujemy, żeby nie wyjść na "minusy" ani poza koniec pliku
+        if new_start < 0:
+            self.current_sample = 0.0
+        elif new_start > last_possible_start:
+            self.current_sample = last_possible_start
+        else:
+            self.current_sample = new_start
