@@ -67,6 +67,7 @@ class AnnotationTime(tk.Frame):
                 )
                 if annotation_obj.sample_index == self.chosen_annotation:
                     self.tree.selection_set(item_id)
+                    self.tree.see(item_id)
 
     def _on_tree_click(self, event):
         item_id = self.tree.identify_row(event.y)

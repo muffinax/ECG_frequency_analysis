@@ -58,6 +58,8 @@ class MainWindow:
             master=self.master,
             navigation_manager=self.navigation_manager,
             on_update_callback=self.update,
+            on_prev_annotation_callback=lambda: self.jump_annotation(-1),  # <--- NOWE
+            on_next_annotation_callback=lambda: self.jump_annotation(1),  # <--- NOWE
             height=80
         )
         self.frame_buttons.pack_propagate(False)
@@ -223,6 +225,62 @@ class MainWindow:
 
         current_time_str = self.navigation_manager.get_current_time_string()
         self.frame_buttons.update_time_display(current_time_str)
+
+    def jump_annotation(self, direction: int):
+        all_anns = self.file_manager.annotations
+        fs = self.file_manager.sampling_frequency
+
+        if fs <= 0 or not all_anns:
+            return
+
+        current_filter = self.frame_annotations.filter_var.get()
+        filter_all = self.frame_annotations.atList.filter_all_text
+
+        filtered_anns = []
+        for ann in all_anns:
+            if current_filter in ("", filter_all) or ann.annotation_type.to_string() == current_filter:
+                filtered_anns.append(ann)
+
+        if not filtered_anns:
+            return
+
+        current_idx = -1
+        if self.chosen_annotation != -1:
+            for i, ann in enumerate(filtered_anns):
+                if ann.sample_index == self.chosen_annotation:
+                    current_idx = i
+                    break
+
+        if current_idx == -1:
+            current_start_sample = self.navigation_manager.current_sample
+            for i, ann in enumerate(filtered_anns):
+                if ann.sample_index >= current_start_sample:
+                    if direction == 1:
+                        target_idx = i
+                    else:
+                        target_idx = max(0, i - 1)
+                    break
+            else:
+                target_idx = len(filtered_anns) - 1
+        else:
+            target_idx = current_idx + direction
+
+        if target_idx < 0:
+            target_idx = 0
+        elif target_idx >= len(filtered_anns):
+            target_idx = len(filtered_anns) - 1
+
+        target_ann = filtered_anns[target_idx]
+
+        # 1. Zapisujemy w Głównym Oknie
+        self.chosen_annotation = target_ann.sample_index
+
+        # 2. KLUCZOWE: Wymuszamy tę samą zmienną w samej tabeli!
+        self.frame_annotations.atList.chosen_annotation = target_ann.sample_index
+
+        # 3. Wyśrodkowanie ekranu i rysowanie
+        self.navigation_manager.center_on_sample(target_ann.sample_index)
+        self.update()
 
     def update_header_info(self):
         if self.file_manager.opened():
