@@ -136,9 +136,12 @@ class MainWindow:
 
         self.master.config(menu=menu_bar)
 
-    def open_file_dialog(self) -> None:
+    def open_file_dialog(self, filepath: str | None = None) -> None:
         try:
-            self.file_manager.open_file_system_gui()
+            if filepath:
+                self.file_manager.open_file(filepath=filepath)
+            else:
+                self.file_manager.open_file_system_gui()
 
             if self.file_manager.opened() and self.file_manager.signals:
                 fs = self.file_manager.sampling_frequency
