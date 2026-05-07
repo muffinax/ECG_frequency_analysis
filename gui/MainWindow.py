@@ -43,7 +43,14 @@ class MainWindow:
         self.master.title(localisation.name_resolver.get("main_title"))
         self.__create_menu()
 
-        self.frame_annotations = AnnotationFrame(master=self.master, width=600)
+        self.chosen_annotation = -1
+
+        self.frame_annotations = AnnotationFrame(
+            master=self.master,
+            on_filter_changed_callback=self.update,
+            on_annotation_click_callback=self.on_annotation_clicked,  # <--- TEGO BRAKOWAŁO!
+            width=600
+        )
         self.frame_annotations.pack_propagate(False)
         self.frame_annotations.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -137,6 +144,10 @@ class MainWindow:
                 self.menu_analysis.entryconfig(0, state=tk.NORMAL)
                 self.menu_analysis.entryconfig(1, state=tk.NORMAL)
 
+                self.analysis_manager.reset_to_defaults()
+                self.chosen_annotation = -1  # RESET
+                self.update_header_info()
+
         except Exception as error_obj:
             messagebox.showerror(
                 title=localisation.name_resolver.get("messagebox_error"),
@@ -149,6 +160,7 @@ class MainWindow:
         to_sample = int(min(from_sample + window_samples, self.navigation_manager.total_samples))
 
         time_axis = self.file_manager.get_time_axis(from_sample=from_sample, to_sample=to_sample)
+        fs = self.file_manager.sampling_frequency
 
         signals_to_draw = {}
         for lead in self.display_manager.displayed_leads:
@@ -158,21 +170,15 @@ class MainWindow:
                 to_sample=to_sample
             )
 
-        #Pobieranie danych dla analizy FFT
         fft_dict_to_draw = {}
         is_analysis_active = self.display_manager.show_frequency_analysis
         has_valid_times = self.analysis_manager.analysis_start >= 0 and self.analysis_manager.analysis_end >= 0
 
-        # Upewniamy się, że wszystko jest gotowe do FFT
         if is_analysis_active and has_valid_times and self.preproc_manager is not None:
-            fs = self.file_manager.sampling_frequency
-
-            # Zamiana sekund na indeksy próbek!
             start_idx = int(round(self.analysis_manager.analysis_start * fs))
             end_idx = int(round(self.analysis_manager.analysis_end * fs))
 
             for lead in self.display_manager.displayed_leads:
-                # Pobieramy cały sygnał dla odnajdywania pików R
                 full_signal = self.file_manager.get_signal(channel=lead)
                 try:
                     fft_result = self.preproc_manager.get_ft_portion(
@@ -185,27 +191,38 @@ class MainWindow:
                     print(f"Ostrzeżenie FFT dla {lead}: {e}")
                     fft_dict_to_draw[lead] = None
 
-        # Aktualizacja płócien (Canvas)
+        annotations_in_window = self.file_manager.get_annotations(from_sample=from_sample, to_sample=to_sample)
+
+        self.frame_annotations.update_data(
+            all_annotations=self.file_manager.annotations,
+            window_annotations=annotations_in_window,
+            sample_rate=fs
+        )
+
+        current_filter = self.frame_annotations.filter_var.get()
+        filter_all = self.frame_annotations.atList.filter_all_text
+        annotation_times_to_draw = []
+
+        if fs > 0:
+            for ann in annotations_in_window:
+                if current_filter in ("", filter_all) or ann.annotation_type.to_string() == current_filter:
+                    annotation_times_to_draw.append(ann.sample_index / fs)
+
+        chosen_time_sec = self.chosen_annotation / fs if (self.chosen_annotation != -1 and fs > 0) else None
+
         self.frame_ecg.update_charts(
             time_axis=time_axis,
             signals_dict=signals_to_draw,
             fft_data_dict=fft_dict_to_draw,
             overlap_sec=self.navigation_manager.overlap_sec,
             is_first=self.navigation_manager.is_first_window(),
-            is_last=self.navigation_manager.is_last_window()
+            is_last=self.navigation_manager.is_last_window(),
+            annotation_times=annotation_times_to_draw,
+            highlighted_time=chosen_time_sec
         )
 
         current_time_str = self.navigation_manager.get_current_time_string()
         self.frame_buttons.update_time_display(current_time_str)
-
-        all_annotations = self.file_manager.annotations
-        window_annotations = self.file_manager.get_annotations(from_sample=from_sample, to_sample=to_sample)
-
-        self.frame_annotations.update_data(
-            all_annotations=all_annotations,
-            window_annotations=window_annotations,
-            sample_rate=self.file_manager.sampling_frequency
-        )
 
     def update_header_info(self):
         if self.file_manager.opened():
@@ -262,4 +279,8 @@ class MainWindow:
             self.analysis_manager.analysis_start = -1.0
             self.analysis_manager.analysis_end = -1.0
 
+        self.update()
+
+    def on_annotation_clicked(self, chosen_index: int):
+        self.chosen_annotation = chosen_index
         self.update()

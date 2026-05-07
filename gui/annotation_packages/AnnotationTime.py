@@ -4,9 +4,13 @@ from tkinter import ttk
 import file_manager
 import localisation
 
+
 class AnnotationTime(tk.Frame):
-    def __init__(self, master: tk.Widget, **kwargs: dict) -> None:
+    def __init__(self, master: tk.Widget, on_click_callback=None, **kwargs: dict) -> None:
         super().__init__(master, **kwargs)
+
+        self.on_click_callback = on_click_callback
+        self.chosen_annotation = -1
 
         self.current_annotations: list[file_manager.Annotation] = []
         self.current_sample_rate: float = 0.0
@@ -32,6 +36,7 @@ class AnnotationTime(tk.Frame):
 
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.tree.bind('<ButtonRelease-1>', self._on_tree_click)
 
     def set_data(self, annotations: list[file_manager.Annotation], sample_rate: float) -> None:
         self.current_annotations = annotations
@@ -50,7 +55,7 @@ class AnnotationTime(tk.Frame):
             if selected_type == self.filter_all_text or selected_type == ann_type_str:
                 time_in_seconds: float = annotation_obj.sample_index / self.current_sample_rate if fs_valid else 0.0
 
-                self.tree.insert(
+                item_id = self.tree.insert(
                     parent="",
                     index=tk.END,
                     values=(
@@ -60,3 +65,42 @@ class AnnotationTime(tk.Frame):
                         annotation_obj.auxiliary_note
                     )
                 )
+                if annotation_obj.sample_index == self.chosen_annotation:
+                    self.tree.selection_set(item_id)
+
+    def _on_tree_click(self, event):
+        item_id = self.tree.identify_row(event.y)
+        if not item_id:
+            if self.chosen_annotation != -1:
+                self.chosen_annotation = -1
+                if self.on_click_callback:
+                    self.on_click_callback(-1)
+            return
+
+        values = self.tree.item(item_id, 'values')
+        if not values:
+            return
+
+        clicked_time_str = values[0]
+        clicked_sample_index = -1
+
+        fs_valid = self.current_sample_rate > 0
+        if fs_valid:
+            for annotation_obj in self.current_annotations:
+                time_in_seconds = annotation_obj.sample_index / self.current_sample_rate
+                # Szukamy po sformatowanym czasie
+                if f"{time_in_seconds:.3f}" == clicked_time_str:
+                    clicked_sample_index = annotation_obj.sample_index
+                    break
+
+        if clicked_sample_index == -1:
+            return
+
+        if self.chosen_annotation == clicked_sample_index:
+            self.chosen_annotation = -1
+            self.tree.selection_remove(item_id)
+        else:
+            self.chosen_annotation = clicked_sample_index
+
+        if self.on_click_callback:
+            self.on_click_callback(self.chosen_annotation)
