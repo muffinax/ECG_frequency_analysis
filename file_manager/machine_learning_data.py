@@ -1,5 +1,6 @@
 import numpy as np
 from dataclasses import dataclass
+from typing import Any
 
 @dataclass
 class MachineLearningData:
@@ -8,3 +9,4 @@ class MachineLearningData:
     signal_duration: int
     signal_name: str
     signal_fft: np.ndarray
+    annotations: list[dict[str, Any]] | None = None

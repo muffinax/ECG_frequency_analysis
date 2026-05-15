@@ -19,7 +19,7 @@ class EDFReader(BaseECGReader):
         file_manager.clear()
         try:
             with pyedflib.EdfReader(filepath) as edf_record:
-
+                file_manager.filepath = filepath
                 try:
                     file_manager.base_datetime = edf_record.getStartdatetime()
                 except Exception:

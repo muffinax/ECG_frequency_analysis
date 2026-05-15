@@ -28,7 +28,8 @@ class MLDatFileReader(BaseECGReader):
                     signal_sample_index_start=rec['signal_sample_index_start'],
                     signal_duration=rec['signal_duration'],
                     signal_name=rec['signal_name'],
-                    signal_fft=rec['signal_fft']
+                    signal_fft=rec['signal_fft'],
+                    annotations=rec.get('annotations')
                 )
                 file_manager.machine_learning_data.append(mld)
 
@@ -59,24 +60,29 @@ class MLDatFileReader(BaseECGReader):
         ignored_types = [EAnnotationType.NORMAL_BEAT, EAnnotationType.EDF, EAnnotationType.UNKNOWN]
 
         for mld in file_manager.machine_learning_data:
-            extracted_annotations = []
+            if mld.annotations is None and mld.original_filename == file_manager.filepath:
+                extracted_annotations = []
+                for ann in file_manager.annotations:
+                    if getattr(ann, 'annotation_origin', None) != EAnnotationOrigin.EXTERNAL:
+                        continue
 
-            for ann in file_manager.annotations:
-                if getattr(ann, 'annotation_origin', None) != EAnnotationOrigin.EXTERNAL:
-                    continue
+                    if ann.annotation_type in ignored_types:
+                        continue
 
-                if ann.annotation_type in ignored_types:
-                    continue
+                    if ann.channel is not None and ann.channel != mld.signal_name:
+                        continue
 
-                if ann.channel is not None and ann.channel != mld.signal_name:
-                    continue
-
-                if mld.signal_sample_index_start <= ann.sample_index < (
-                        mld.signal_sample_index_start + mld.signal_duration):
-                    extracted_annotations.append({
-                        "annotation_type": ann.annotation_type.value,
-                        "custom_label": ann.custom_label
-                    })
+                    if mld.signal_sample_index_start <= ann.sample_index < (
+                            mld.signal_sample_index_start + mld.signal_duration):
+                        extracted_annotations.append({
+                            "annotation_type": ann.annotation_type.value,
+                            "custom_label": ann.custom_label
+                        })
+                annotations_to_save = extracted_annotations
+            elif mld.annotations is not None or (mld.annotations is None and (mld.original_filename, mld.signal_sample_index_start, mld.signal_duration, mld.signal_name) not in records_dict.keys()):
+                annotations_to_save = mld.annotations
+            else:
+                continue
 
             record = {
                 "original_filename": mld.original_filename,
@@ -84,11 +90,12 @@ class MLDatFileReader(BaseECGReader):
                 "signal_duration": mld.signal_duration,
                 "signal_name": mld.signal_name,
                 "signal_fft": mld.signal_fft,
-                "annotations": extracted_annotations
+                "annotations": annotations_to_save
             }
 
             key = (mld.original_filename, mld.signal_sample_index_start, mld.signal_duration, mld.signal_name)
-            records_dict[key] = record
+            if mld.original_filename == file_manager.filepath or mld.annotations is not None:
+                records_dict[key] = record
 
         try:
             with open(filepath, 'wb') as f:
