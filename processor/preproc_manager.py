@@ -1,6 +1,7 @@
 import numpy as np
 from .signal_processor import SignalProcessor
 from .signal_filter import SignalFilter
+from file_manager import MachineLearningData
 
 class PreprocManager:
     def __init__(self, sampling_frequency: float):
@@ -20,3 +21,31 @@ class PreprocManager:
         Computes a beat-synchronous STFT where windows span from R_peak[i] to R_peak[i+2].
         """
         return self.processor.get_beat_synchronous_stft(data)
+
+    def get_stft_whole(self, data: np.ndarray) -> list[MachineLearningData]:
+        """
+        Computes a beat-synchronous STFT where windows span from R_peak[i] to R_peak[i+2].
+        Returns a list of MachineLearningData objects, one for each FFT window.
+        """
+        freqs, start_times, durations, stft_matrix = self.processor.get_beat_synchronous_stft(data)
+        
+        ml_data_list = []
+        num_windows = stft_matrix.shape[1] 
+        
+        for i in range(num_windows):
+            window_fft = stft_matrix[:, i]
+            
+            ml_data = MachineLearningData(
+
+                signal_sampling_frequency=self.fs,
+                signal_fft_freqs=freqs,
+                signal_fft=window_fft,
+                
+                signal_sample_index_start=start_times[i],
+                signal_duration=durations[i]
+
+            )
+            
+            ml_data_list.append(ml_data)
+            
+        return ml_data_list
