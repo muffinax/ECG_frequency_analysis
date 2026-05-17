@@ -29,6 +29,7 @@ class MLDatFileReader(BaseECGReader):
                     signal_duration=rec['signal_duration'],
                     signal_name=rec['signal_name'],
                     signal_fft=rec['signal_fft'],
+                    signal_sampling_frequency=rec['signal_sampling_frequency'],
                     annotations=rec.get('annotations')
                 )
                 file_manager.machine_learning_data.append(mld)
@@ -90,6 +91,7 @@ class MLDatFileReader(BaseECGReader):
                 "signal_duration": mld.signal_duration,
                 "signal_name": mld.signal_name,
                 "signal_fft": mld.signal_fft,
+                "signal_sampling_frequency": mld.signal_sampling_frequency,
                 "annotations": annotations_to_save
             }
 
