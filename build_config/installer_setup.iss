@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "ECG Analyzer"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.3.0"
 #define MyAppPublisher "My Company, Inc."
 #define MyAppURL "https://github.com/muffinax/ECG_frequency_analysis"
 #define MyAppExeName "ecg_analyzer.exe"
