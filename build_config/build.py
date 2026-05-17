@@ -12,7 +12,7 @@ if sys.platform != "win32":
 # =====================================================================
 # App specification
 APP_NAME: str = "ECG Analyzer"
-VERSION: str = "0.3.2"
+VERSION: str = "0.4.0"
 AUTHOR: str = "Marta Witkowska, Filip Romanowski, Aleksander Dziągwa, Kacper Bytner, Wojciech Biskup"
 DESCRIPTION: str = "ECG Frequency Analysis Tool"
 EXECUTABLE_NAME: str = "ecg_analyzer.exe"
