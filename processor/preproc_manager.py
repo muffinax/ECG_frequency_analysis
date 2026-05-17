@@ -16,12 +16,6 @@ class PreprocManager:
         """
         return self.processor.get_r_peak_snapped_fft(data, start_idx, end_idx)
 
-    def get_stft_whole(self, data: np.ndarray):
-        """
-        Computes a beat-synchronous STFT where windows span from R_peak[i] to R_peak[i+2].
-        """
-        return self.processor.get_beat_synchronous_stft(data)
-
     def get_stft_whole(self, data: np.ndarray) -> list[MachineLearningData]:
         """
         Computes a beat-synchronous STFT where windows span from R_peak[i] to R_peak[i+2].
