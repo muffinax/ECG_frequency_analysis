@@ -69,7 +69,7 @@ class FileManager:
             selected_filepath: str = filedialog.askopenfilename(
                 parent=root_window,
                 title="Select input ECG file",
-                filetypes=[("WFDB Header", "*.hea"), ("EDF", "*.edf"), ("MLDat", "*.mldat"), ("All files", "*.*")]
+                filetypes=[("ECG files", "*.hea *.edf"), ("WFDB Header", "*.hea"), ("EDF", "*.edf"), ("MLDat", "*.mldat"), ("All files", "*.*")]
             )
 
             if selected_filepath:

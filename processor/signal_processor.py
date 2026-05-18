@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import stft, find_peaks
+from scipy.signal import find_peaks
 
 class SignalProcessor:
     def __init__(self, sampling_frequency: float):
@@ -49,33 +49,30 @@ class SignalProcessor:
         if len(r_peaks) < 3:
             raise ValueError("Not enough R-peaks detected to form beat-synchronous windows.")
 
-        max_len = 0
-        for i in range(len(r_peaks) - 2):
-            window_len = r_peaks[i+2] - r_peaks[i]
-            if window_len > max_len:
-                max_len = window_len
-                
+        diffs = r_peaks[2:] - r_peaks[:-2]
+        max_len = np.max(diffs)
         nfft = int(2 ** np.ceil(np.log2(max_len)))
         
-        complex_stft = []
-        times = []
+        num_windows = len(r_peaks) - 2
+        
+        padded_segments = np.zeros((num_windows, nfft))
+        
+        start_times = np.zeros(num_windows)
+        durations = np.zeros(num_windows)
 
-        for i in range(len(r_peaks) - 2):
+        for i in range(num_windows):
             start_idx = r_peaks[i]
             end_idx = r_peaks[i+2]
             
             segment = data[start_idx:end_idx]
-            
             window = np.hanning(len(segment))
-            segment_windowed = segment * window
             
-            fft_vals = np.fft.rfft(segment_windowed, n=nfft)
-            complex_stft.append(fft_vals)
-            times.append(((start_idx + end_idx) / 2) / self.fs)
+            padded_segments[i, :len(segment)] = segment * window
             
+            start_times[i] = start_idx / self.fs
+            durations[i] = (end_idx - start_idx) / self.fs
+            
+        stft_matrix = np.fft.rfft(padded_segments, n=nfft, axis=1).T
         freqs = np.fft.rfftfreq(nfft, 1 / self.fs)
         
-        # Zlepienie wyników zespolonych w macierz
-        stft_matrix = np.column_stack(complex_stft) 
-        
-        return freqs, np.array(times), stft_matrix
+        return freqs, start_times, durations, stft_matrix
