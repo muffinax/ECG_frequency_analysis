@@ -91,6 +91,7 @@
     "parameters_window_go_button": "Idź",
 
     "messagebox_error": "Błąd",
-    "messagebox_could_not_read_file": "Nie można wczytać pliku"
+    "messagebox_could_not_read_file": "Nie można wczytać pliku",
+    "messagebox_could_not_save_file": "Nie można zapisać pliku"
 
 }

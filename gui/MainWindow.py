@@ -1,6 +1,7 @@
 import os
 import sys
 import tkinter as tk
+import traceback
 from tkinter import messagebox
 
 from gui.AnnotationFrame import AnnotationFrame
@@ -29,10 +30,13 @@ class MainWindow:
         self.analysis_manager = AnalysisManager()
 
         if sys.platform == 'win32':
+            # Windows
             self.master.state('zoomed')
         elif sys.platform.startswith('linux'):
+            # Linux
             self.master.attributes('-zoomed', True)
         else:
+            # macOS
             self.master.attributes('-fullscreen', True)
 
         self.master.title(localisation.name_resolver.get("main_title"))
@@ -95,13 +99,17 @@ class MainWindow:
 
         # MENU: Plik
         self.menu_file = tk.Menu(master=menu_bar, tearoff=0)
-        menu_bar.add_cascade(label=localisation.name_resolver.get("menubar_file") or "Plik", menu=self.menu_file)
-        self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_open"),
-                                   command=self.open_file_dialog)
-        self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_save"), state=tk.DISABLED,
-                                   command=None)
-        self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_save_as"), state=tk.DISABLED,
-                                   command=None)
+        menu_bar.add_cascade(label=localisation.name_resolver.get("menubar_file"), menu=self.menu_file)
+
+        self.menu_file.add_command(
+            label=localisation.name_resolver.get("menubar_file_open"),
+            command=self.open_file_dialog)
+        self.menu_file.add_command(
+            label=localisation.name_resolver.get("menubar_file_save"),
+            command=self.save_file)
+        self.menu_file.add_command(
+            label=localisation.name_resolver.get("menubar_file_save_as"),
+            command=self.save_file_as)
         self.menu_file.add_separator()
         self.menu_file.add_command(label=localisation.name_resolver.get("menubar_file_exit"), command=self.__on_closing)
 
@@ -112,7 +120,8 @@ class MainWindow:
         self.menu_analysis.add_command(
             label="Analiza dla całego pliku",
             state=tk.DISABLED,
-            command=self.__perform_full_file_analysis  # Zastąpiono starego toggle'a
+            command=None
+            #command=self.__perform_full_file_analysis
         )
         self.menu_analysis.add_command(
             label=localisation.name_resolver.get("menubar_analysis_parameters"),
@@ -136,9 +145,12 @@ class MainWindow:
 
         self.master.config(menu=menu_bar)
 
-    def open_file_dialog(self) -> None:
+    def open_file_dialog(self, filepath: str | None = None) -> None:
         try:
-            self.file_manager.open_file_system_gui()
+            if filepath:
+                self.file_manager.open_file(filepath=filepath)
+            else:
+                self.file_manager.open_file_system_gui()
 
             if self.file_manager.opened() and self.file_manager.signals:
                 fs = self.file_manager.sampling_frequency
@@ -160,9 +172,28 @@ class MainWindow:
                 self.update()
 
         except Exception as error_obj:
+            traceback.print_exc()
             messagebox.showerror(
                 title=localisation.name_resolver.get("messagebox_error"),
                 message=f"{localisation.name_resolver.get('messagebox_could_not_read_file')}:\n{str(object=error_obj)}"
+            )
+
+    def save_file(self) -> None:
+        try:
+            self.file_manager.save_file(self.file_manager.filepath)
+        except Exception as error_obj:
+            messagebox.showerror(
+                title=localisation.name_resolver.get("messagebox_error"),
+                message=f"{localisation.name_resolver.get('messagebox_could_not_save_file')}:\n{str(object=error_obj)}"
+            )
+
+    def save_file_as(self) -> None:
+        try:
+            self.file_manager.save_file_system_gui()
+        except Exception as error_obj:
+            messagebox.showerror(
+                title=localisation.name_resolver.get("messagebox_error"),
+                message=f"{localisation.name_resolver.get('messagebox_could_not_save_file')}:\n{str(object=error_obj)}"
             )
 
     def update(self):
@@ -197,7 +228,13 @@ class MainWindow:
                         start_idx=start_idx,
                         end_idx=end_idx
                     )
-                    fft_dict_to_draw[lead] = fft_result
+
+                    if len(fft_result) == 4:
+                        freqs, mags, actual_start_idx, actual_end_idx = fft_result
+                        fft_dict_to_draw[lead] = (freqs, mags, actual_start_idx / fs, actual_end_idx / fs)
+                    else:
+                        fft_dict_to_draw[lead] = fft_result
+
                 except Exception as e:
                     print(f"Ostrzeżenie FFT dla {lead}: {e}")
                     fft_dict_to_draw[lead] = None
@@ -287,6 +324,7 @@ class MainWindow:
 
     def update_header_info(self):
         if self.file_manager.opened():
+            print(self.file_manager.filepath)
             filename = os.path.basename(self.file_manager.filepath)
             fs = self.file_manager.sampling_frequency
             start_date = self.file_manager.base_datetime.strftime(
@@ -326,14 +364,7 @@ class MainWindow:
         self.update()
 
     def __perform_full_file_analysis(self):
-        if not self.file_manager.opened():
-            return
-
-        total_duration = self.file_manager.get_duration_seconds()
-        self.analysis_manager.analysis_start = 0.0
-        self.analysis_manager.analysis_end = total_duration
-        self.display_manager.show_frequency_analysis = True
-        self.update()
+        return
 
     def __on_developer_mode_toggled(self):
         # Ta metoda odpali się, kiedy użyjesz przełącznika Tryb Developera

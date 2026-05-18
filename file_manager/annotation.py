@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from .e_annotation_type import EAnnotationType
+from .e_annotation_origin import EAnnotationOrigin
 
 import localisation
 
@@ -8,6 +9,8 @@ import localisation
 @dataclass
 class Annotation:
     sample_index: int
+    annotation_duration: int
+    annotation_origin: EAnnotationOrigin
     annotation_type: EAnnotationType
     auxiliary_note: str
     channel: str | None

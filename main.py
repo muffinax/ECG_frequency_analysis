@@ -10,8 +10,7 @@ def main() -> None:
     if len(sys.argv) > 1:
         target_file = sys.argv[1]
         if os.path.exists(target_file):
-            app.file_manager.open_file(target_file)
-            app.update()
+            app.open_file_dialog(target_file)
 
     root.mainloop()
 

@@ -16,9 +16,10 @@ if TYPE_CHECKING:
 class EDFReader(BaseECGReader):
 
     def read(self, filepath: str, file_manager: "FileManager") -> None:
+        file_manager.clear()
         try:
             with pyedflib.EdfReader(filepath) as edf_record:
-
+                file_manager.filepath = filepath
                 try:
                     file_manager.base_datetime = edf_record.getStartdatetime()
                 except Exception:

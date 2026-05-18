@@ -12,7 +12,7 @@ if sys.platform != "win32":
 # =====================================================================
 # App specification
 APP_NAME: str = "ECG Analyzer"
-VERSION: str = "0.1.3"
+VERSION: str = "0.4.0"
 AUTHOR: str = "Marta Witkowska, Filip Romanowski, Aleksander Dziągwa, Kacper Bytner, Wojciech Biskup"
 DESCRIPTION: str = "ECG Frequency Analysis Tool"
 EXECUTABLE_NAME: str = "ecg_analyzer.exe"
@@ -34,7 +34,7 @@ BUILD_EXE_OPTIONS: dict = {
     "excludes": [
         "PyQt5", "PyQt6", "PySide2", "PySide6",
         "setuptools", "wheel", "_distutils_hack", "pip",
-        "unittest", "pydoc", "pydoc_data", "curses", "xmlrpc", "_pyrepl",
+        "unittest", "curses", "xmlrpc",
         "sqlite3",
         "requests", "urllib3", "certifi", "idna", "charset_normalizer"
     ],

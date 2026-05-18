@@ -29,26 +29,6 @@ class NavigationManager:
         else:
             self.current_sample = 0
 
-    def next_window(self):
-        window_samples = int(round(self.window_size_sec * self.current_fs))
-        last_possible_start = max(0.0, float(self.total_samples) - window_samples)
-        if self.current_sample >= last_possible_start:
-            self.current_sample = last_possible_start
-            return
-
-        step_sec = self.window_size_sec - self.overlap_sec
-        if step_sec <= 0:
-            step_sec = self.window_size_sec
-
-        step_samples = step_sec * self.current_fs
-        new_sample = self.current_sample + step_samples
-
-        # Sprawdzamy, czy nowa pozycja nie przekracza ostatniego możliwego okna
-        if new_sample > last_possible_start:
-            self.current_sample = last_possible_start
-        else:
-            self.current_sample = new_sample
-
     def previous_window(self):
         step_sec = self.window_size_sec - self.overlap_sec
         if step_sec <= 0:
@@ -61,18 +41,42 @@ class NavigationManager:
         else:
             self.current_sample = 0
 
+    def next_window(self):
+        window_samples = int(round(self.window_size_sec * self.current_fs))
+        # WYMUSZAMY INT:
+        last_possible_start = int(max(0, self.total_samples - window_samples))
+
+        if self.current_sample >= last_possible_start:
+            self.current_sample = last_possible_start
+            return
+
+        step_sec = self.window_size_sec - self.overlap_sec
+        if step_sec <= 0:
+            step_sec = self.window_size_sec
+
+        # WYMUSZAMY INT (tutaj brakowało):
+        step_samples = int(round(step_sec * self.current_fs))
+        new_sample = self.current_sample + step_samples
+
+        # Sprawdzamy, czy nowa pozycja nie przekracza ostatniego możliwego okna
+        if new_sample > last_possible_start:
+            self.current_sample = last_possible_start
+        else:
+            self.current_sample = new_sample
+
     def jump_to_time_string(self, input_str: str):
         clean_input = input_str.strip().replace(',', '.')
 
         try:
             target_seconds = float(clean_input)
-            target_sample = target_seconds * self.current_fs
+            # WYMUSZAMY INT:
+            target_sample = int(round(target_seconds * self.current_fs))
 
-            window_samples = self.window_size_sec * self.current_fs
-            last_possible_start = max(0.0, float(self.total_samples) - window_samples)
+            window_samples = int(round(self.window_size_sec * self.current_fs))
+            last_possible_start = int(max(0, self.total_samples - window_samples))
 
             if target_sample < 0:
-                self.current_sample = 0.0
+                self.current_sample = 0
             elif target_sample > last_possible_start:
                 self.current_sample = last_possible_start
             else:
