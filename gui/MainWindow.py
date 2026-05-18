@@ -56,6 +56,8 @@ class MainWindow:
         self.frame_buttons = SettingsFrame(
             master=self.master,
             navigation_manager=self.navigation_manager,
+            preproc_manager = self.preproc_manager,
+            file_manager = self.file_manager,
             on_update_callback=self.update,
             on_prev_annotation_callback=lambda: self.jump_annotation(-1),
             on_next_annotation_callback=lambda: self.jump_annotation(1),

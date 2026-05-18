@@ -2,14 +2,20 @@ import tkinter as tk
 from tkinter import messagebox
 
 import localisation
+from file_manager import FileManager, Annotation, EAnnotationType
+from gui.display_data.DisplayManager import DisplayManager
 from gui.display_data.NavigationManager import NavigationManager
+from processor.preproc_manager import PreprocManager
 
 
 class SettingsFrame(tk.Frame):
-    def __init__(self, master, navigation_manager: NavigationManager, on_update_callback,
-                 on_prev_annotation_callback=None, on_next_annotation_callback=None, **kwargs):
+    def __init__(self, master, navigation_manager: NavigationManager, display_manager: DisplayManager, preproc_manager: PreprocManager, file_manager: FileManager,
+                 on_update_callback, on_prev_annotation_callback=None, on_next_annotation_callback=None, **kwargs):
         super().__init__(master, **kwargs)
         self.navigation_manager = navigation_manager
+        self.display_manager = display_manager
+        self.preproc_manager = preproc_manager
+        self.file_manager = file_manager
         self.on_update_callback = on_update_callback
         self.on_prev_annotation_callback = on_prev_annotation_callback
         self.on_next_annotation_callback = on_next_annotation_callback
@@ -46,7 +52,7 @@ class SettingsFrame(tk.Frame):
 
 
         self.add_annotation_button = tk.Button(btn_container, text="+ Add annotation", cursor="hand2", background="lightblue", command=None)
-        self.add_signal_button = tk.Button(btn_container, text="+ Add signal", cursor="hand2", background="lightblue", command=None)
+        self.add_signal_button = tk.Button(btn_container, text="+ Add signal", cursor="hand2", background="lightblue", command=self._cmd_add_signal)
 
 
         self.to_start_button.pack(side=tk.LEFT, padx=2)
@@ -120,3 +126,27 @@ class SettingsFrame(tk.Frame):
     def _cmd_next_ann(self):
         if self.on_next_annotation_callback:
             self.on_next_annotation_callback()
+
+    def _cmd_add_signal(self):
+        # for lead in self.display_manager.displayed_leads:
+        #
+        #     #signal from lead
+        #     signal = self.file_manager.get_signal(channel=lead)
+        #
+        #     #Result of get_stft_whole
+        #     stft_result = self.preproc_manager.get_stft_whole(signal)
+        #
+        #     detected_sample_indices = extract_features_from_stft(stft_result)
+        #
+        #     # 3. Utwórz obiekty Annotation i dodaj je do menedżera plików
+        #     for sample_index in detected_sample_indices:
+        #         new_ann = Annotation(
+        #             sample_index=sample_index,
+        #             annotation_type=EAnnotationType.CUSTOM,  # FOR NOW SAVES ONLY CUSTOM NAME
+        #             auxiliary_note="Automatyczna detekcja STFT",
+        #             channel=lead,
+        #             custom_label="STFT_DETECT"  # TO CHANGE LATER
+        #         )
+        #         self.file_manager.add_annotation(new_ann)
+
+        self.on_update_callback()
