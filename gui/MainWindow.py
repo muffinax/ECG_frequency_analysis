@@ -60,6 +60,7 @@ class MainWindow:
         self.frame_buttons = SettingsFrame(
             master=self.master,
             navigation_manager=self.navigation_manager,
+            display_manager = self.display_manager,
             preproc_manager = self.preproc_manager,
             file_manager = self.file_manager,
             on_update_callback=self.update,
@@ -155,6 +156,8 @@ class MainWindow:
             if self.file_manager.opened() and self.file_manager.signals:
                 fs = self.file_manager.sampling_frequency
                 self.preproc_manager = PreprocManager(sampling_frequency=fs)
+
+                self.frame_buttons.preproc_manager = self.preproc_manager
 
                 self.display_manager.reset_to_defaults(self.file_manager.get_available_leads())
 

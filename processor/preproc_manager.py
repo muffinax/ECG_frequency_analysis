@@ -16,7 +16,7 @@ class PreprocManager:
         """
         return self.processor.get_r_peak_snapped_fft(data, start_idx, end_idx)
 
-    def get_stft_whole(self, data: np.ndarray) -> list[MachineLearningData]:
+    def get_stft_whole(self, data: np.ndarray, filename: str, signal_name: str) -> list[MachineLearningData]:
         """
         Computes a beat-synchronous STFT where windows span from R_peak[i] to R_peak[i+2].
         Returns a list of MachineLearningData objects, one for each FFT window.
@@ -30,6 +30,8 @@ class PreprocManager:
             window_fft = stft_matrix[:, i]
             
             ml_data = MachineLearningData(
+                original_filename=filename,
+                signal_name=signal_name,
 
                 signal_sampling_frequency=self.fs,
                 signal_fft_freqs=freqs,

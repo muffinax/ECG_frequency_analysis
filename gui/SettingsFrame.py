@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 
 import localisation
-from file_manager import FileManager, Annotation, EAnnotationType
+from file_manager import FileManager, Annotation, EAnnotationType, EAnnotationOrigin
 from gui.display_data.DisplayManager import DisplayManager
 from gui.display_data.NavigationManager import NavigationManager
 from processor.preproc_manager import PreprocManager
@@ -128,25 +128,35 @@ class SettingsFrame(tk.Frame):
             self.on_next_annotation_callback()
 
     def _cmd_add_signal(self):
-        # for lead in self.display_manager.displayed_leads:
-        #
-        #     #signal from lead
-        #     signal = self.file_manager.get_signal(channel=lead)
-        #
-        #     #Result of get_stft_whole
-        #     stft_result = self.preproc_manager.get_stft_whole(signal)
-        #
-        #     detected_sample_indices = extract_features_from_stft(stft_result)
-        #
-        #     # 3. Utwórz obiekty Annotation i dodaj je do menedżera plików
-        #     for sample_index in detected_sample_indices:
-        #         new_ann = Annotation(
-        #             sample_index=sample_index,
-        #             annotation_type=EAnnotationType.CUSTOM,  # FOR NOW SAVES ONLY CUSTOM NAME
-        #             auxiliary_note="Automatyczna detekcja STFT",
-        #             channel=lead,
-        #             custom_label="STFT_DETECT"  # TO CHANGE LATER
-        #         )
-        #         self.file_manager.add_annotation(new_ann)
+        import os  # Potrzebne do wyciągnięcia samej nazwy pliku ze ścieżki
 
+        # 1. Pobieramy nazwę pliku z menedżera
+        filename = "Nieznany"
+        if self.file_manager.filepath:
+            filename = os.path.basename(self.file_manager.filepath)
+
+        for lead in self.display_manager.displayed_leads:
+
+            #signal from lead
+            signal = self.file_manager.get_signal(channel=lead)
+
+            # Pobieramy listę
+            ml_data_list = self.preproc_manager.get_stft_whole(signal, filename, lead)
+
+            for ml_data in ml_data_list:
+                self.file_manager.machine_learning_data.append(ml_data)
+
+                # getting sample index
+                sample_idx = int(ml_data.signal_sample_index_start * self.file_manager.sampling_frequency)
+
+                new_ann = Annotation(
+                    sample_index=sample_idx,
+                    annotation_type=EAnnotationType.CUSTOM,
+                    auxiliary_note="Początek okna STFT",
+                    channel=lead,
+                    custom_label="ML_WINDOW",
+                    annotation_duration=int(ml_data.signal_duration * self.file_manager.sampling_frequency),
+                    annotation_origin=EAnnotationOrigin.ANALYSIS
+                )
+                self.file_manager.add_annotation(new_ann)
         self.on_update_callback()
