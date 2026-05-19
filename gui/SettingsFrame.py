@@ -133,7 +133,7 @@ class SettingsFrame(tk.Frame):
         # 1. Pobieramy nazwę pliku z menedżera
         filename = "Nieznany"
         if self.file_manager.filepath:
-            filename = os.path.basename(self.file_manager.filepath)
+            filename = self.file_manager.filepath
 
         for lead in self.display_manager.displayed_leads:
 
