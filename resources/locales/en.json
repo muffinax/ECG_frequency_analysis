@@ -57,6 +57,8 @@
     "frame_annotationframe_table_type_label": "Symbol",
     "frame_annotationframe_table_type_verbose_label": "Type",
     "frame_annotationframe_table_note_label": "Notes",
+    "frame_annotationframe_table_filter": "Filter:",
+    "frame_annotationframe_table_time_filter_all": "All",
 
     "main_title": "ECG frequency analysis",
     "parameters_title": "Parameters",
@@ -89,5 +91,6 @@
     "parameters_window_go_button": "Go",
 
     "messagebox_error": "Error",
-    "messagebox_could_not_read_file": "Can't read the file"
+    "messagebox_could_not_read_file": "Can't read the file",
+    "messagebox_could_not_save_file": "Can't save the file"
 }

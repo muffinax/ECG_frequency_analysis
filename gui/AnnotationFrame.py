@@ -3,48 +3,116 @@ from tkinter import ttk
 
 import file_manager
 import localisation
+from gui.annotation_packages.AnnotationTime import AnnotationTime
+from gui.annotation_packages.AnnotationFFT import AnnotationFFT
 
 
 class AnnotationFrame(tk.Frame):
-    def __init__(self, master: tk.Widget, **kwargs: dict) -> None:
+    def __init__(self, master: tk.Widget, on_filter_changed_callback=None, on_annotation_click_callback=None,
+                 **kwargs: dict) -> None:
         super().__init__(master, **kwargs)
+        self.on_filter_changed_callback = on_filter_changed_callback
+        self.on_annotation_click_callback = on_annotation_click_callback
+        self.configure(relief=tk.GROOVE, borderwidth=2)
 
-        self.label = tk.Label(self, text=localisation.name_resolver.get("frame_annotationframe_table_label"), font=("Arial", 14, "bold"))
-        self.label.pack(pady=10)
+        self.container_header = tk.Frame(self)
 
-        columns: tuple[str, str, str, str] = ("time", "type", "type_verbose", "note")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings")
+        self.title_label = tk.Label(self.container_header,
+                                    text=localisation.name_resolver.get("frame_annotationframe_table_label"),
+                                    font=("Arial", 14, "bold"))
+        self.title_label.pack(side=tk.LEFT, padx=(10, 0))
 
-        self.tree.heading(column="time", text=localisation.name_resolver.get("frame_annotationframe_table_time_label"))
-        self.tree.heading(column="type", text=localisation.name_resolver.get("frame_annotationframe_table_type_label"))
-        self.tree.heading(column="type_verbose", text=localisation.name_resolver.get("frame_annotationframe_table_type_verbose_label"))
-        self.tree.heading(column="note", text=localisation.name_resolver.get("frame_annotationframe_table_note_label"))
+        self.label = tk.Label(self.container_header,
+                              text=localisation.name_resolver.get("frame_annotationframe_table_filter"),
+                              font=("Arial", 11, "bold"))
 
-        self.tree.column(column="time", width=80, anchor=tk.CENTER)
-        self.tree.column(column="type", width=40, anchor=tk.CENTER)
-        self.tree.column(column="type_verbose", width=250, anchor=tk.W)
-        self.tree.column(column="note", width=100, anchor=tk.W)
+        self.filter_var = tk.StringVar()
+        self.filter_combobox = ttk.Combobox(self.container_header, textvariable=self.filter_var, state="readonly",
+                                            width=15)
 
-        self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=self.scrollbar.set)
+        self.filter_combobox.pack(side=tk.RIGHT, padx=(0, 10))
+        self.label.pack(side=tk.RIGHT, padx=(0, 5))
 
-        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0), pady=5)
+        self.container_header.pack(fill=tk.X, pady=10)
 
-    def update_annotations(self, annotations: list[file_manager.Annotation], sample_rate: float) -> None:
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+        # TABELA 1: CZASOWA
+        self.time_label = tk.Label(self, text="Adnotacje Czasowe", font=("Arial", 10, "bold"), fg="#444444")
+        self.time_label.pack(side=tk.TOP, anchor=tk.W, padx=10)
 
-        for annotation_obj in annotations:
-            time_in_seconds: float = annotation_obj.sample_index / sample_rate if sample_rate > 0 else 0.0
-            self.tree.insert(
-                parent="",
-                index=tk.END,
-                values=(
-                    f"{time_in_seconds:.3f}",
-                    annotation_obj.annotation_type.to_string(),
-                    annotation_obj.get_display_name(name_resolver=localisation.name_resolver),
-                    annotation_obj.auxiliary_note
-                )
-            )
+        self.atList = AnnotationTime(self, on_click_callback=lambda idx: self._on_table_clicked(idx, "time"))
+        self.atList.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=(5, 0), pady=(0, 5))
 
+        # TABELA 2: FFT
+        self.fft_label = tk.Label(self, text="Adnotacje Częstotliwościowe", font=("Arial", 10, "bold"), fg="#444444")
+        self.fft_label.pack(side=tk.TOP, anchor=tk.W, padx=10, pady=(10, 0))
+
+        self.afList = AnnotationFFT(self, on_click_callback=lambda idx: self._on_table_clicked(idx, "fft"))
+        self.afList.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=(5, 0), pady=(0, 5))
+
+        self.filter_combobox.bind("<<ComboboxSelected>>", self._on_filter_changed)
+
+        self._last_all_annotations_ref = None
+        self._all_annotations = []
+
+    def _on_table_clicked(self, chosen_index: int, source: str):
+        """Synchronizuje niebieskie zaznaczenie między tabelami"""
+        if source == "time":
+            # Jeśli kliknięto czasową, gaśmy FFT
+            self.afList.chosen_annotation = -1
+            for item in self.afList.tree.selection():
+                self.afList.tree.selection_remove(item)
+        else:
+            # Jeśli kliknięto FFT, gaśmy czasową
+            self.atList.chosen_annotation = -1
+            for item in self.atList.tree.selection():
+                self.atList.tree.selection_remove(item)
+
+        if self.on_annotation_click_callback:
+            self.on_annotation_click_callback(chosen_index)
+
+    def update_data(self, all_annotations: list[file_manager.Annotation],
+                    window_annotations: list[file_manager.Annotation], sample_rate: float) -> None:
+
+        self._all_annotations = all_annotations
+        self.atList.set_data(window_annotations, sample_rate)
+        self.afList.set_data(window_annotations, sample_rate)
+
+        if self._last_all_annotations_ref is not all_annotations:
+            self._last_all_annotations_ref = all_annotations
+
+            unique_types = sorted(list({ann.annotation_type.to_string() for ann in all_annotations}))
+            combobox_values = [self.atList.filter_all_text] + unique_types
+            self.filter_combobox["values"] = combobox_values
+
+            if self.filter_var.get() not in combobox_values:
+                self.filter_combobox.current(0)
+
+        self.atList.apply_filter(self.filter_var.get())
+        self.afList.apply_filter(self.filter_var.get())
+
+    def _on_filter_changed(self, event: tk.Event = None) -> None:
+        selected_type = self.filter_var.get()
+
+        # Sprawdzamy, czy cokolwiek jest zaznaczone (w którejkolwiek tabeli)
+        chosen_idx = self.atList.chosen_annotation
+        if chosen_idx == -1:
+            chosen_idx = self.afList.chosen_annotation
+
+        if chosen_idx != -1:
+            found_ann = next((a for a in self._all_annotations if a.sample_index == chosen_idx), None)
+
+            if found_ann:
+                current_type = found_ann.annotation_type.to_string()
+                if selected_type != self.atList.filter_all_text and current_type != selected_type:
+
+                    self.atList.chosen_annotation = -1
+                    self.afList.chosen_annotation = -1
+
+                    if self.on_annotation_click_callback:
+                        self.on_annotation_click_callback(-1)
+
+        self.atList.apply_filter(selected_type)
+        self.afList.apply_filter(selected_type)
+
+        if self.on_filter_changed_callback:
+            self.on_filter_changed_callback()

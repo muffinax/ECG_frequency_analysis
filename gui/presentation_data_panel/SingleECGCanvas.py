@@ -46,7 +46,7 @@ class SingleECGCanvas(tk.Frame):
 
         ax.xaxis.set_major_formatter(FuncFormatter(time_formatter))
 
-    def update_chart(self, time_axis, amplitude, overlap_sec=0.0, is_first=False, is_last=False, analysis_start=-1.0, analysis_end=-1.0, analysis_overlap=0.0):
+    def update_chart(self, time_axis, amplitude, overlap_sec=0.0, is_first=False, is_last=False, analysis_start=-1.0, analysis_end=-1.0, analysis_overlap=0.0, annotation_times=None, highlighted_time=None):
         self.figure.clear()
 
         if amplitude is None or len(time_axis) == 0:
@@ -57,6 +57,13 @@ class SingleECGCanvas(tk.Frame):
 
         ax.plot(time_axis, amplitude, color='black', linewidth=1)
         ax.set_xlim([time_axis[0], time_axis[-1]])
+
+        if annotation_times:
+            ax.plot(annotation_times, [1.02] * len(annotation_times), marker='v', color='darkgreen',
+                    markersize=6, linestyle='None', transform=ax.get_xaxis_transform(), clip_on=False)
+
+        if highlighted_time is not None:
+            ax.axvline(x=highlighted_time, color='red', linewidth=1.5, linestyle='-', alpha=0.8, zorder=3)
 
         if overlap_sec > 0.0:
             if not is_first:

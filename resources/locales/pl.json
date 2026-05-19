@@ -57,6 +57,8 @@
     "frame_annotationframe_table_type_label": "Symbol",
     "frame_annotationframe_table_type_verbose_label": "Typ",
     "frame_annotationframe_table_note_label": "Uwagi",
+    "frame_annotationframe_table_filter": "Filtr:",
+    "frame_annotationframe_table_time_filter_all": "Wszystkie",
 
     "main_title": "Analiza częstotliwościowa EKG",
     "parameters_title": "Parametry",
@@ -89,6 +91,7 @@
     "parameters_window_go_button": "Idź",
 
     "messagebox_error": "Błąd",
-    "messagebox_could_not_read_file": "Nie można wczytać pliku"
+    "messagebox_could_not_read_file": "Nie można wczytać pliku",
+    "messagebox_could_not_save_file": "Nie można zapisać pliku"
 
 }
