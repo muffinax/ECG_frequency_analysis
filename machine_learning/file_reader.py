@@ -29,7 +29,11 @@ try:
             annotations=rec.get('annotations')
         )
         machine_learning_data.append(mld)
-    print(machine_learning_data[0].original_filename)
+    print(len(machine_learning_data[0].signal_fft))
+    #for freq in machine_learning_data[0].signal_fft_freqs:
+        #print(freq)
+    for fft in machine_learning_data[0].signal_fft:
+        print(fft)
 except Exception as e:
     raise InputManagerException(
         error_id="mldat_read_error",
