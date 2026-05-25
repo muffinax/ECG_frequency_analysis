@@ -2,14 +2,6 @@ import numpy as np
 from dataclasses import dataclass
 from typing import Any
 
-from file_manager import EAnnotationType
-
-
-@dataclass
-class AnnotationData:
-    annotation_type: EAnnotationType
-    custom_label: str
-
 @dataclass
 class MachineLearningData:
     original_filename: str
@@ -19,4 +11,4 @@ class MachineLearningData:
     signal_sampling_frequency: float
     signal_fft_freqs: np.ndarray
     signal_fft: np.ndarray
-    annotations: list[EAnnotationType] | None = None
+    annotations: list[dict[str, Any]] | None = None

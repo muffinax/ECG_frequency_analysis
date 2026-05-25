@@ -3,7 +3,7 @@ import pickle
 from typing import TYPE_CHECKING, Any
 
 from .base_ecg_reader import BaseECGReader
-from .machine_learning_data import MachineLearningData, AnnotationData
+from .machine_learning_data import MachineLearningData
 from .e_annotation_type import EAnnotationType
 from .e_annotation_origin import EAnnotationOrigin
 from .input_manager_exception import InputManagerException
@@ -23,26 +23,14 @@ class MLDatFileReader(BaseECGReader):
 
             file_manager.machine_learning_data = []
             for rec in records:
-                raw_annotations = rec.get('annotations')
-                parsed_annotations = None
-
-                if raw_annotations is not None:
-                    parsed_annotations = [
-                        AnnotationData(
-                            annotation_type=EAnnotationType.from_string(ann['annotation_type']),
-                            custom_label=ann.get('custom_label', "")
-                        )
-                        for ann in raw_annotations
-                    ]
                 mld = MachineLearningData(
                     original_filename=rec['original_filename'],
                     signal_sample_index_start=rec['signal_sample_index_start'],
                     signal_duration=rec['signal_duration'],
                     signal_name=rec['signal_name'],
                     signal_fft=rec['signal_fft'],
-                    signal_fft_freqs=rec['signal_fft_freqs'],
                     signal_sampling_frequency=rec['signal_sampling_frequency'],
-                    annotations=parsed_annotations
+                    annotations=rec.get('annotations')
                 )
                 file_manager.machine_learning_data.append(mld)
 
@@ -103,7 +91,6 @@ class MLDatFileReader(BaseECGReader):
                 "signal_duration": mld.signal_duration,
                 "signal_name": mld.signal_name,
                 "signal_fft": mld.signal_fft,
-                "signal_fft_freqs": mld.signal_fft_freqs,
                 "signal_sampling_frequency": mld.signal_sampling_frequency,
                 "annotations": annotations_to_save
             }
