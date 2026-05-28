@@ -60,6 +60,10 @@
     "frame_annotationframe_table_filter": "Filtr:",
     "frame_annotationframe_table_time_filter_all": "Wszystkie",
 
+    "frame_fft_annotationframe_table_start_time_label": "Czas rozpoczęcia",
+    "frame_fft_annotationframe_table_duration_label": "Czas trwania",
+
+
     "main_title": "Analiza częstotliwościowa EKG",
     "parameters_title": "Parametry",
 
@@ -92,6 +96,9 @@
 
     "messagebox_error": "Błąd",
     "messagebox_could_not_read_file": "Nie można wczytać pliku",
-    "messagebox_could_not_save_file": "Nie można zapisać pliku"
+    "messagebox_could_not_save_file": "Nie można zapisać pliku",
+
+    "annotation_saved": "Anotacje zapisane w pliku",
+    "annotation_ai": "Anotacje wygenerowane"
 
 }

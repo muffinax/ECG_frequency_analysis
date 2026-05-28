@@ -83,7 +83,7 @@ class ECGFrame(tk.Frame):
         for canvas_set in self.canvas_sets:
             canvas_set.set_height(self.current_plot_height)
 
-    def update_charts(self, time_axis, signals_dict, fft_data_dict=None, overlap_sec=0.0, is_first=False, is_last=False, annotation_times=None, highlighted_time=None):
+    def update_charts(self, time_axis, signals_dict, fft_data_dict=None, overlap_sec=0.0, is_first=False, is_last=False, annotation_times=None, ai_ranges=None, highlighted_time=None):
 
         if fft_data_dict is None:
             fft_data_dict = {}
@@ -114,6 +114,7 @@ class ECGFrame(tk.Frame):
                 analysis_overlap=self.analysis_manager.analysis_overlap,
                 is_analysis_active = show_fft,
                 annotation_times=annotation_times,
+                ai_ranges=ai_ranges,
                 highlighted_time=highlighted_time
                 )
 

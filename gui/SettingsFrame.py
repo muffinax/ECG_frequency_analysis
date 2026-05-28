@@ -63,7 +63,7 @@ class SettingsFrame(tk.Frame):
         self.next_button.pack(side=tk.LEFT, padx=2)
         self.to_end_button.pack(side=tk.LEFT, padx=2)
         self.add_annotation_button.pack(side=tk.LEFT, padx=(10))
-        self.add_signal_button.pack(side=tk.LEFT)
+        # self.add_signal_button.pack(side=tk.LEFT)
 
         self.time_label.pack(side=tk.LEFT, padx=2)
         self.time_entry.pack(side=tk.LEFT, padx=2)
@@ -128,25 +128,21 @@ class SettingsFrame(tk.Frame):
             self.on_next_annotation_callback()
 
     def _cmd_add_signal(self):
-        import os  # Potrzebne do wyciągnięcia samej nazwy pliku ze ścieżki
+        import os
 
-        # 1. Pobieramy nazwę pliku z menedżera
         filename = "Nieznany"
         if self.file_manager.filepath:
             filename = self.file_manager.filepath
 
         for lead in self.display_manager.displayed_leads:
 
-            #signal from lead
             signal = self.file_manager.get_signal(channel=lead)
 
-            # Pobieramy listę
             ml_data_list = self.preproc_manager.get_stft_whole(signal, filename, lead)
 
             for ml_data in ml_data_list:
                 self.file_manager.machine_learning_data.append(ml_data)
 
-                # getting sample index
                 sample_idx = int(ml_data.signal_sample_index_start * self.file_manager.sampling_frequency)
 
                 new_ann = Annotation(
@@ -160,3 +156,9 @@ class SettingsFrame(tk.Frame):
                 )
                 self.file_manager.add_annotation(new_ann)
         self.on_update_callback()
+
+    def set_developer_mode(self, is_dev: bool):
+        if is_dev:
+            self.add_signal_button.pack(side=tk.LEFT)
+        else:
+            self.add_signal_button.pack_forget()

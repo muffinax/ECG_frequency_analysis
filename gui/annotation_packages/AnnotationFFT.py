@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 
 import localisation
+from file_manager import Annotation
 
 
 class AnnotationFFT(tk.Frame):
@@ -11,7 +12,7 @@ class AnnotationFFT(tk.Frame):
         self.on_click_callback = on_click_callback
         self.chosen_annotation = -1
 
-        self.current_annotations: list[str] = []
+        self.current_annotations: list[Annotation] = []
         self.current_sample_rate: float = 0.0
 
         self.filter_all_text = (localisation.name_resolver.get("frame_annotationframe_table_time_filter_all"))
@@ -37,7 +38,7 @@ class AnnotationFFT(tk.Frame):
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.tree.bind('<ButtonRelease-1>', self._on_tree_click)
 
-    def set_data(self, annotations: list[str], sample_rate: float) -> None:
+    def set_data(self, annotations: list[Annotation], sample_rate: float) -> None:
         self.current_annotations = annotations
         self.current_sample_rate = sample_rate
 
@@ -88,7 +89,6 @@ class AnnotationFFT(tk.Frame):
         if fs_valid:
             for annotation_obj in self.current_annotations:
                 time_in_seconds = annotation_obj.sample_index / self.current_sample_rate
-                # Szukamy po sformatowanym czasie
                 if f"{time_in_seconds:.3f}" == clicked_time_str:
                     clicked_sample_index = annotation_obj.sample_index
                     break

@@ -4,6 +4,7 @@ import tkinter as tk
 import traceback
 from tkinter import messagebox
 
+from ai_api.ai_handler import use_model
 from gui.AnnotationFrame import AnnotationFrame
 from gui.display_data.AnalysisManager import AnalysisManager
 from gui.display_data.DisplayManager import DisplayManager
@@ -13,7 +14,7 @@ from gui.display_data.NavigationManager import NavigationManager
 from gui.parameters_window.ParametersWindow import ParametersWindow
 from gui.HelpWindow import HelpWindow
 
-from file_manager import FileManager
+from file_manager import FileManager, Annotation, EAnnotationOrigin, EAnnotationType
 import localisation
 from processor.preproc_manager import PreprocManager
 
@@ -121,8 +122,7 @@ class MainWindow:
         self.menu_analysis.add_command(
             label="Analiza dla całego pliku",
             state=tk.DISABLED,
-            command=None
-            #command=self.__perform_full_file_analysis
+            command=self.__perform_full_file_analysis
         )
         self.menu_analysis.add_command(
             label=localisation.name_resolver.get("menubar_analysis_parameters"),
@@ -242,22 +242,56 @@ class MainWindow:
                     print(f"Ostrzeżenie FFT dla {lead}: {e}")
                     fft_dict_to_draw[lead] = None
 
-        annotations_in_window = self.file_manager.get_annotations(from_sample=from_sample, to_sample=to_sample)
+        all_anns_in_window = self.file_manager.get_annotations(from_sample=from_sample, to_sample=to_sample)
+
+        annotations_in_window = []
+        ml_annotations_in_window = []
+
+        for ann in all_anns_in_window:
+            if ann.annotation_origin == EAnnotationOrigin.ANALYSIS:
+                ml_annotations_in_window.append(ann)
+            else:
+                annotations_in_window.append(ann)
+
+        all_time_anns = []
+        all_ai_anns = []
+
+        for ann in self.file_manager.annotations:
+            if ann.annotation_origin == EAnnotationOrigin.ANALYSIS:
+                all_ai_anns.append(ann)
+            else:
+                all_time_anns.append(ann)
 
         self.frame_annotations.update_data(
-            all_annotations=self.file_manager.annotations,
+            time_annotations=all_time_anns,
+            ml_annotations=all_ai_anns,
             window_annotations=annotations_in_window,
+            window_ml_annotations=ml_annotations_in_window,
             sample_rate=fs
         )
 
         current_filter = self.frame_annotations.filter_var.get()
         filter_all = self.frame_annotations.atList.filter_all_text
         annotation_times_to_draw = []
+        ai_ranges_to_draw = []
 
         if fs > 0:
-            for ann in annotations_in_window:
+            # Zmienione na all_anns_in_window, żeby na wykresie rysowały się też adnotacje z AI
+            for ann in all_anns_in_window:
                 if current_filter in ("", filter_all) or ann.annotation_type.to_string() == current_filter:
-                    annotation_times_to_draw.append(ann.sample_index / fs)
+                    if ann.annotation_origin == EAnnotationOrigin.ANALYSIS:
+                        # Obliczamy początek i koniec
+                        start_time = ann.sample_index / fs
+                        end_time = (ann.sample_index + ann.annotation_duration) / fs
+                        label = ann.get_display_name(localisation.name_resolver)
+                        ai_ranges_to_draw.append({
+                            'start': start_time,
+                            'end': end_time,
+                            'label': label
+                        })
+                    else:
+                        # Zwykłe punktowe
+                        annotation_times_to_draw.append(ann.sample_index / fs)
 
         chosen_time_sec = self.chosen_annotation / fs if (self.chosen_annotation != -1 and fs > 0) else None
 
@@ -269,6 +303,7 @@ class MainWindow:
             is_first=self.navigation_manager.is_first_window(),
             is_last=self.navigation_manager.is_last_window(),
             annotation_times=annotation_times_to_draw,
+            ai_ranges=ai_ranges_to_draw,
             highlighted_time=chosen_time_sec
         )
 
@@ -366,16 +401,14 @@ class MainWindow:
             self.navigation_manager.current_sample = max(0, self.navigation_manager.total_samples - window_samples)
         self.update()
 
-    def __perform_full_file_analysis(self):
-        return
-
     def __on_developer_mode_toggled(self):
-        # Ta metoda odpali się, kiedy użyjesz przełącznika Tryb Developera
         is_dev = self.developer_mode_var.get()
+        self.frame_buttons.set_developer_mode(is_dev)
+
         if is_dev:
-            print("Tryb Developera włączony. Możesz tu dodać odblokowanie ukrytych przycisków!")
+            print("Dev mode on.")
         else:
-            print("Tryb Developera wyłączony.")
+            print("Dev mode off.")
 
     def on_annotation_clicked(self, chosen_index: int):
         self.chosen_annotation = chosen_index
@@ -386,3 +419,92 @@ class MainWindow:
             self.help_window.lift()
         else:
             self.help_window = HelpWindow(self.master)
+
+    def __perform_full_file_analysis(self):
+        import os
+
+        if not self.file_manager.opened() or self.preproc_manager is None:
+            messagebox.showwarning(localisation.name_resolver.get("messagebox_error"), "Najpierw wczytaj plik!")
+            return
+
+        filename = "Nieznany"
+        if self.file_manager.filepath:
+            filename = self.file_manager.filepath
+
+        # --- EKRAN ŁADOWANIA ---
+        loading_window = tk.Toplevel(self.master)
+        loading_window.title("Trwa analiza...")
+        loading_window.geometry("300x100")
+        loading_window.transient(self.master)
+        loading_window.grab_set()
+        loading_window.resizable(False, False)
+        loading_window.update_idletasks()
+        x = self.master.winfo_x() + (self.master.winfo_width() // 2) - 150
+        y = self.master.winfo_y() + (self.master.winfo_height() // 2) - 50
+        loading_window.geometry(f"+{x}+{y}")
+        tk.Label(loading_window, text="Trwa analiza sygnału przez AI...\nProszę czekać.",
+                 font=("Arial", 11)).pack(expand=True, fill=tk.BOTH)
+        loading_window.update()
+        # -----------------------
+
+        try:
+            all_ml_data = []
+
+            for lead in self.display_manager.displayed_leads:
+                signal = self.file_manager.get_signal(channel=lead)
+                ml_data_list = self.preproc_manager.get_stft_whole(signal, filename, lead)
+
+                for ml_data in ml_data_list:
+                    self.file_manager.machine_learning_data.append(ml_data)
+
+                    all_ml_data.append(ml_data)
+
+            if not all_ml_data:
+                loading_window.destroy()
+                messagebox.showinfo("Analiza AI", "Brak okien STFT do analizy.")
+                return
+
+            # MODEL
+            from ai_api.ai_handler import use_model
+            predictions = use_model(all_ml_data)
+            pred_bin = (predictions > 0.2).astype(int)
+            reverse_label_map = {0: "+", 1: "/", 2: "L", 3: "R", 4: "V"}
+            added_count = 0
+
+            # 3. ZAPIS WYNIKÓW (zamiast sztywnego "ML_WINDOW", dajemy faktyczny wynik AI)
+            for i, ml_data in enumerate(all_ml_data):
+                pred_row = pred_bin[i]
+                active_classes = [reverse_label_map[idx] for idx, val in enumerate(pred_row) if val == 1]
+
+                if not active_classes:
+                    continue
+
+                label_str = ",".join(active_classes)
+                sample_idx = int(ml_data.signal_sample_index_start * self.file_manager.sampling_frequency)
+                duration = int(ml_data.signal_duration * self.file_manager.sampling_frequency)
+                channel_name = getattr(ml_data, 'signal_name', lead)
+
+                new_ann = Annotation(
+                    sample_index=sample_idx,
+                    annotation_duration=duration,
+                    annotation_origin=EAnnotationOrigin.ANALYSIS,
+                    annotation_type=EAnnotationType.CUSTOM,
+                    auxiliary_note=f"Zidentyfikowano przez AI",
+                    channel=channel_name,
+                    custom_label=label_str
+                )
+
+                self.file_manager.add_annotation(new_ann)
+                added_count += 1
+
+            self.update()
+
+            loading_window.destroy()
+            messagebox.showinfo("Analiza zakończona", f"Wygenerowano adnotacji AI: {added_count}")
+
+        except Exception as e:
+            loading_window.destroy()
+            import traceback
+            traceback.print_exc()
+            error_title = localisation.name_resolver.get("frame_annotationframe_table_label")
+            messagebox.showerror("Błąd AI", f"{error_title}: {str(e)}")

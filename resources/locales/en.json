@@ -60,6 +60,9 @@
     "frame_annotationframe_table_filter": "Filter:",
     "frame_annotationframe_table_time_filter_all": "All",
 
+    "frame_fft_annotationframe_table_start_time_label": "Starting time",
+    "frame_fft_annotationframe_table_duration_label": "Duration",
+
     "main_title": "ECG frequency analysis",
     "parameters_title": "Parameters",
 
@@ -92,5 +95,8 @@
 
     "messagebox_error": "Error",
     "messagebox_could_not_read_file": "Can't read the file",
-    "messagebox_could_not_save_file": "Can't save the file"
+    "messagebox_could_not_save_file": "Can't save the file",
+
+    "annotation_saved": "Annotations saved in file",
+    "annotation_ai": "Annotation generated"
 }
