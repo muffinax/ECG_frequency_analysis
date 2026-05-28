@@ -58,20 +58,22 @@ class AnnotationFrame(tk.Frame):
         self._ml_annotations = []
 
     def _on_table_clicked(self, chosen_index: int, source: str):
-        """Synchronized blue frame"""
+        """Synchronized blue frame and flag passing"""
+        is_ai = False
+
         if source == "time":
-            # When Time chosen, hide FFT
             self.mlList.chosen_annotation = -1
             for item in self.mlList.tree.selection():
                 self.mlList.tree.selection_remove(item)
+            is_ai = False
         else:
-            # when FFT chosen, hide Time
             self.atList.chosen_annotation = -1
             for item in self.atList.tree.selection():
                 self.atList.tree.selection_remove(item)
+            is_ai = True
 
         if self.on_annotation_click_callback:
-            self.on_annotation_click_callback(chosen_index)
+            self.on_annotation_click_callback(chosen_index, is_ai)
 
     def update_data(self, time_annotations: list[file_manager.Annotation], ml_annotations: list[file_manager.Annotation],
                     window_ml_annotations: list[file_manager.Annotation], window_annotations: list[file_manager.Annotation],
@@ -141,3 +143,4 @@ class AnnotationFrame(tk.Frame):
 
         if self.on_filter_changed_callback:
             self.on_filter_changed_callback()
+

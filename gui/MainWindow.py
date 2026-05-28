@@ -47,6 +47,7 @@ class MainWindow:
         self.__create_menu()
 
         self.chosen_annotation = -1
+        self.is_ai_active = False
 
         self.frame_annotations = AnnotationFrame(
             master=self.master,
@@ -170,6 +171,7 @@ class MainWindow:
                 self.menu_analysis.entryconfig(1, state=tk.NORMAL)
 
                 self.chosen_annotation = -1
+                self.is_ai_active = False
                 self.update_header_info()
                 self.update()
 
@@ -285,7 +287,8 @@ class MainWindow:
         if self.chosen_annotation != -1 and fs > 0:
             chosen_time_sec = self.chosen_annotation / fs
             for ann in self.file_manager.annotations:
-                if ann.sample_index == self.chosen_annotation:
+                is_ann_ai = (ann.annotation_origin == EAnnotationOrigin.ANALYSIS)
+                if ann.sample_index == self.chosen_annotation and is_ann_ai == self.is_ai_active:
                     chosen_duration_sec = getattr(ann, 'annotation_duration', 0) / fs
                     break
 
@@ -314,14 +317,7 @@ class MainWindow:
         current_filter = self.frame_annotations.filter_var.get()
         filter_all = self.frame_annotations.atList.filter_all_text
 
-        active_origin = None
-        if self.chosen_annotation != -1:
-            for ann in all_anns:
-                if ann.sample_index == self.chosen_annotation:
-                    active_origin = ann.annotation_origin
-                    break
-
-        is_ai_mode = (active_origin == EAnnotationOrigin.ANALYSIS)
+        is_ai_mode = self.is_ai_active
 
         filtered_anns = []
         for ann in all_anns:
@@ -362,10 +358,15 @@ class MainWindow:
 
         target_ann = filtered_anns[target_idx]
 
-        self.frame_annotations.atList.chosen_annotation = target_ann.sample_index
-        self.frame_annotations.mlList.chosen_annotation = target_ann.sample_index
+        if is_ai_mode:
+            self.frame_annotations.mlList.chosen_annotation = target_ann.sample_index
+            self.frame_annotations.atList.chosen_annotation = -1
+        else:
+            self.frame_annotations.atList.chosen_annotation = target_ann.sample_index
+            self.frame_annotations.mlList.chosen_annotation = -1
 
-        self.on_annotation_clicked(target_ann.sample_index)
+        self.on_annotation_clicked(target_ann.sample_index, is_ai_mode)
+
         self.navigation_manager.center_on_sample(target_ann.sample_index)
         self.update()
 
@@ -419,16 +420,17 @@ class MainWindow:
         else:
             print("Dev mode off.")
 
-    def on_annotation_clicked(self, chosen_index: int):
+    def on_annotation_clicked(self, chosen_index: int, is_ai: bool = False):
         self.chosen_annotation = chosen_index
+        self.is_ai_active = is_ai
 
         fs = self.file_manager.sampling_frequency
 
         if chosen_index != -1 and fs > 0:
-            # Szukamy klikniętej adnotacji w file_managerze
             target_ann = None
             for ann in self.file_manager.annotations:
-                if ann.sample_index == chosen_index:
+                is_ann_ai = (ann.annotation_origin == EAnnotationOrigin.ANALYSIS)
+                if ann.sample_index == chosen_index and is_ann_ai == is_ai:
                     target_ann = ann
                     break
 
@@ -449,13 +451,13 @@ class MainWindow:
                         # (żeby program wiedział, że ma zamknięty przedział)
                         self.analysis_manager.fft_time_mode = self.analysis_manager.fft_time_mode.CUSTOM_TIME
                 else:
-                    # Jeśli to zwykła adnotacja punktowa, czyścimy analizę
                     self.analysis_manager.analysis_start = -1.0
                     self.analysis_manager.analysis_end = -1.0
         else:
-            # Odznaczono wiersz - czyścimy podświetlenie i analizę
             self.analysis_manager.analysis_start = -1.0
             self.analysis_manager.analysis_end = -1.0
+
+            self.is_ai_active = False
 
         self.update()
 
