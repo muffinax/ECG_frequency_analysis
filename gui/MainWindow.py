@@ -5,11 +5,11 @@ import traceback
 from tkinter import messagebox
 
 from gui.annotation_packages.AnnotationFrame import AnnotationFrame
-from display_data import AnalysisManager
-from display_data import DisplayManager
+from display_data.AnalysisManager import AnalysisManager
+from display_data.DisplayManager import DisplayManager
+from display_data.NavigationManager import NavigationManager
 from gui.presentation_data_panel.ECGFrame import ECGFrame
 from gui.SettingsFrame import SettingsFrame
-from display_data import NavigationManager
 from gui.parameters_window.ParametersWindow import ParametersWindow
 from gui.HelpWindow import HelpWindow
 
