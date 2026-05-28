@@ -1,13 +1,8 @@
 import tkinter as tk
 
-from scipy.fft import fftfreq
-
-import localisation
-from gui.display_data.AnalysisManager import AnalysisManager
-from gui.display_data.DisplayManager import DisplayManager
-from gui.display_data.NavigationManager import NavigationManager
+from display_data.AnalysisManager import AnalysisManager
+from display_data.DisplayManager import DisplayManager
 from gui.presentation_data_panel.LeadCanvasSet import LeadCanvasSet
-from gui.presentation_data_panel.SingleECGCanvas import SingleECGCanvas
 
 
 class ECGFrame(tk.Frame):
@@ -43,12 +38,12 @@ class ECGFrame(tk.Frame):
 
         self.bg_canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
-        self.bg_canvas.bind_all("<Control-MouseWheel>", self._on_zoom)  #Windows/MacOS
-        self.bg_canvas.bind_all("<Control-Button-4>", self._on_zoom)  #Linux (Scroll Up)
-        self.bg_canvas.bind_all("<Control-Button-5>", self._on_zoom)  #Linux (Scroll Down)
+        self.bg_canvas.bind_all("<Control-MouseWheel>", self._on_zoom)  # Windows/MacOS
+        self.bg_canvas.bind_all("<Control-Button-4>", self._on_zoom)  # Linux (Scroll Up)
+        self.bg_canvas.bind_all("<Control-Button-5>", self._on_zoom)  # Linux (Scroll Down)
 
     def _on_mousewheel(self, event):
-        #(Windows/Mac)
+        # (Windows/Mac)
         self.bg_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def _rebuild_canvas_sets(self):
@@ -83,7 +78,8 @@ class ECGFrame(tk.Frame):
         for canvas_set in self.canvas_sets:
             canvas_set.set_height(self.current_plot_height)
 
-    def update_charts(self, time_axis, signals_dict, fft_data_dict=None, overlap_sec=0.0, is_first=False, is_last=False, annotation_times=None, ai_ranges=None, highlighted_time=None):
+    def update_charts(self, time_axis, signals_dict, fft_data_dict=None, overlap_sec=0.0, is_first=False,
+                      is_last=False, annotation_times=None, highlighted_time=None, highlighted_duration=0.0):
 
         if fft_data_dict is None:
             fft_data_dict = {}
@@ -112,11 +108,11 @@ class ECGFrame(tk.Frame):
                 analysis_start=self.analysis_manager.analysis_start,
                 analysis_end=self.analysis_manager.analysis_end,
                 analysis_overlap=self.analysis_manager.analysis_overlap,
-                is_analysis_active = show_fft,
+                is_analysis_active=show_fft,
                 annotation_times=annotation_times,
-                ai_ranges=ai_ranges,
-                highlighted_time=highlighted_time
-                )
+                highlighted_time=highlighted_time,
+                highlighted_duration=highlighted_duration
+            )
 
     def _handle_graph_click(self, lead_name, time_start, time_end):
         if not self.display_manager.show_frequency_analysis:
@@ -153,7 +149,3 @@ class ECGFrame(tk.Frame):
         if self.analysis_manager.analysis_start >= 0 and self.analysis_manager.analysis_end >= 0:
             if self.on_update_callback:
                 self.on_update_callback()
-
-
-
-

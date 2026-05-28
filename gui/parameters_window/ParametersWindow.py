@@ -2,9 +2,9 @@ import tkinter as tk
 
 import localisation
 from file_manager import FileManager
-from gui.display_data.AnalysisManager import AnalysisManager
-from gui.display_data.DisplayManager import DisplayManager
-from gui.display_data.NavigationManager import NavigationManager
+from display_data import AnalysisManager
+from display_data import DisplayManager
+from display_data import NavigationManager
 from gui.parameters_window.DetailsFrame import DetailsFrame
 from gui.parameters_window.LeadsListFrame import LeadsListFrame
 

@@ -5,7 +5,7 @@ from matplotlib.ticker import MultipleLocator, FuncFormatter
 
 import localisation
 
-#Drawing chart
+# Drawing chart
 class SingleECGCanvas(tk.Frame):
     def __init__(self, master, lead_name: str, plot_height: float = 2.5, click_callback=None, **kwargs):
         super().__init__(master, **kwargs)
@@ -46,9 +46,9 @@ class SingleECGCanvas(tk.Frame):
 
         ax.xaxis.set_major_formatter(FuncFormatter(time_formatter))
 
-    def update_chart(self, time_axis, amplitude, overlap_sec=0.0, is_first=False, is_last=False, analysis_start=-1.0,
-                     analysis_end=-1.0, analysis_overlap=0.0, annotation_times=None, ai_ranges=None,
-                     highlighted_time=None):
+    def update_chart(self, time_axis, amplitude, overlap_sec=0.0, is_first=False, is_last=False,
+                     analysis_start=-1.0, analysis_end=-1.0, analysis_overlap=0.0, annotation_times=None,
+                     highlighted_time=None, highlighted_duration=0.0):
         self.figure.clear()
 
         if amplitude is None or len(time_axis) == 0:
@@ -64,20 +64,15 @@ class SingleECGCanvas(tk.Frame):
             ax.plot(annotation_times, [1.02] * len(annotation_times), marker='v', color='darkgreen',
                     markersize=6, linestyle='None', transform=ax.get_xaxis_transform(), clip_on=False)
 
-        if ai_ranges:
-            for ai_range in ai_ranges:
-                start_t = ai_range['start']
-                end_t = ai_range['end']
-                label_txt = ai_range['label']
-
-                ax.axvspan(start_t, end_t, color='orange', alpha=0.3, zorder=1)
-
-                # mid_t = (start_t + end_t) / 2.0
-                # ax.text(mid_t, 0.95, label_txt, color='darkorange', ha='center', va='top',
-                #         fontsize=8, fontweight='bold', transform=ax.get_xaxis_transform(), zorder=4)
-
         if highlighted_time is not None:
-            ax.axvline(x=highlighted_time, color='red', linewidth=1.5, linestyle='-', alpha=0.8, zorder=3)
+            if highlighted_duration > 0.0:
+                ax.axvspan(highlighted_time, highlighted_time + highlighted_duration, color='dodgerblue',
+                           alpha=0.35, zorder=3)
+                ax.axvline(x=highlighted_time, color='blue', linewidth=2.0, linestyle='--', zorder=4)
+                ax.axvline(x=highlighted_time + highlighted_duration, color='blue', linewidth=2.0, linestyle='--',
+                           zorder=4)
+            else:
+                ax.axvline(x=highlighted_time, color='red', linewidth=1.5, linestyle='-', alpha=0.8, zorder=3)
 
         if overlap_sec > 0.0:
             if not is_first:
@@ -174,7 +169,7 @@ class SingleECGCanvas(tk.Frame):
             if self.click_callback:
                 self.click_callback(self.lead_name, self.drag_start_x, -1.0)
         else:
-            #user clicked and dragged
+            # user clicked and dragged
             start = min(self.drag_start_x, drag_end_x)
             end = max(self.drag_start_x, drag_end_x)
             if self.click_callback:

@@ -1,10 +1,8 @@
 import tkinter as tk
 
 import localisation
-from gui.display_data.AnalysisManager import AnalysisManager
-from gui.display_data.AnalysisManager import FFTTimeFrameMode, FFT_MODE_LABELS
-from gui.display_data.AnalysisManager import InterferenceFilter, INTERFERENCE_FILTER_LABELS
-from gui.display_data.NavigationManager import NavigationManager
+from display_data import AnalysisManager
+from display_data import NavigationManager
 
 
 class DetailsFrame(tk.Frame):

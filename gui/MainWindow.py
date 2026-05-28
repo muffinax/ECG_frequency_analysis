@@ -4,13 +4,12 @@ import tkinter as tk
 import traceback
 from tkinter import messagebox
 
-from ai_api.ai_handler import use_model
-from gui.AnnotationFrame import AnnotationFrame
-from gui.display_data.AnalysisManager import AnalysisManager
-from gui.display_data.DisplayManager import DisplayManager
-from gui.ECGFrame import ECGFrame
+from gui.annotation_packages.AnnotationFrame import AnnotationFrame
+from display_data import AnalysisManager
+from display_data import DisplayManager
+from gui.presentation_data_panel.ECGFrame import ECGFrame
 from gui.SettingsFrame import SettingsFrame
-from gui.display_data.NavigationManager import NavigationManager
+from display_data import NavigationManager
 from gui.parameters_window.ParametersWindow import ParametersWindow
 from gui.HelpWindow import HelpWindow
 
@@ -273,27 +272,22 @@ class MainWindow:
         current_filter = self.frame_annotations.filter_var.get()
         filter_all = self.frame_annotations.atList.filter_all_text
         annotation_times_to_draw = []
-        ai_ranges_to_draw = []
 
         if fs > 0:
-            # Zmienione na all_anns_in_window, żeby na wykresie rysowały się też adnotacje z AI
             for ann in all_anns_in_window:
                 if current_filter in ("", filter_all) or ann.annotation_type.to_string() == current_filter:
-                    if ann.annotation_origin == EAnnotationOrigin.ANALYSIS:
-                        # Obliczamy początek i koniec
-                        start_time = ann.sample_index / fs
-                        end_time = (ann.sample_index + ann.annotation_duration) / fs
-                        label = ann.get_display_name(localisation.name_resolver)
-                        ai_ranges_to_draw.append({
-                            'start': start_time,
-                            'end': end_time,
-                            'label': label
-                        })
-                    else:
-                        # Zwykłe punktowe
+                    if ann.annotation_origin != EAnnotationOrigin.ANALYSIS:
                         annotation_times_to_draw.append(ann.sample_index / fs)
 
-        chosen_time_sec = self.chosen_annotation / fs if (self.chosen_annotation != -1 and fs > 0) else None
+        chosen_time_sec = None
+        chosen_duration_sec = 0.0
+
+        if self.chosen_annotation != -1 and fs > 0:
+            chosen_time_sec = self.chosen_annotation / fs
+            for ann in self.file_manager.annotations:
+                if ann.sample_index == self.chosen_annotation:
+                    chosen_duration_sec = getattr(ann, 'annotation_duration', 0) / fs
+                    break
 
         self.frame_ecg.update_charts(
             time_axis=time_axis,
@@ -303,8 +297,8 @@ class MainWindow:
             is_first=self.navigation_manager.is_first_window(),
             is_last=self.navigation_manager.is_last_window(),
             annotation_times=annotation_times_to_draw,
-            ai_ranges=ai_ranges_to_draw,
-            highlighted_time=chosen_time_sec
+            highlighted_time=chosen_time_sec,
+            highlighted_duration=chosen_duration_sec
         )
 
         current_time_str = self.navigation_manager.get_current_time_string()
@@ -320,9 +314,21 @@ class MainWindow:
         current_filter = self.frame_annotations.filter_var.get()
         filter_all = self.frame_annotations.atList.filter_all_text
 
+        active_origin = None
+        if self.chosen_annotation != -1:
+            for ann in all_anns:
+                if ann.sample_index == self.chosen_annotation:
+                    active_origin = ann.annotation_origin
+                    break
+
+        is_ai_mode = (active_origin == EAnnotationOrigin.ANALYSIS)
+
         filtered_anns = []
         for ann in all_anns:
-            if current_filter in ("", filter_all) or ann.annotation_type.to_string() == current_filter:
+            matches_filter = (current_filter in ("", filter_all) or ann.annotation_type.to_string() == current_filter)
+            is_ai_ann = (ann.annotation_origin == EAnnotationOrigin.ANALYSIS)
+
+            if matches_filter and (is_ai_ann == is_ai_mode):
                 filtered_anns.append(ann)
 
         if not filtered_anns:
@@ -355,8 +361,11 @@ class MainWindow:
             target_idx = len(filtered_anns) - 1
 
         target_ann = filtered_anns[target_idx]
-        self.chosen_annotation = target_ann.sample_index
 
+        self.frame_annotations.atList.chosen_annotation = target_ann.sample_index
+        self.frame_annotations.mlList.chosen_annotation = target_ann.sample_index
+
+        self.on_annotation_clicked(target_ann.sample_index)
         self.navigation_manager.center_on_sample(target_ann.sample_index)
         self.update()
 
@@ -412,6 +421,42 @@ class MainWindow:
 
     def on_annotation_clicked(self, chosen_index: int):
         self.chosen_annotation = chosen_index
+
+        fs = self.file_manager.sampling_frequency
+
+        if chosen_index != -1 and fs > 0:
+            # Szukamy klikniętej adnotacji w file_managerze
+            target_ann = None
+            for ann in self.file_manager.annotations:
+                if ann.sample_index == chosen_index:
+                    target_ann = ann
+                    break
+
+            if target_ann:
+                # Jeśli to adnotacja z AI (zakresowa), udajemy, że użytkownik zaznaczył ten obszar
+                if getattr(target_ann, 'annotation_origin', None) == EAnnotationOrigin.ANALYSIS:
+                    start_time = target_ann.sample_index / fs
+                    duration = getattr(target_ann, 'annotation_duration', 0) / fs
+
+                    if duration > 0:
+                        # Wpisujemy czasy do AnalysisManagera
+                        self.analysis_manager.analysis_start = start_time
+                        self.analysis_manager.analysis_end = start_time + duration
+
+                        # Włączamy analizę (jeśli była wyłączona)
+                        self.display_manager.show_frequency_analysis = True
+                        # Wymuszamy zaznaczenie trybu CUSTOM_TIME na "zaznaczono"
+                        # (żeby program wiedział, że ma zamknięty przedział)
+                        self.analysis_manager.fft_time_mode = self.analysis_manager.fft_time_mode.CUSTOM_TIME
+                else:
+                    # Jeśli to zwykła adnotacja punktowa, czyścimy analizę
+                    self.analysis_manager.analysis_start = -1.0
+                    self.analysis_manager.analysis_end = -1.0
+        else:
+            # Odznaczono wiersz - czyścimy podświetlenie i analizę
+            self.analysis_manager.analysis_start = -1.0
+            self.analysis_manager.analysis_end = -1.0
+
         self.update()
 
     def __show_help_window(self):
@@ -421,7 +466,6 @@ class MainWindow:
             self.help_window = HelpWindow(self.master)
 
     def __perform_full_file_analysis(self):
-        import os
 
         if not self.file_manager.opened() or self.preproc_manager is None:
             messagebox.showwarning(localisation.name_resolver.get("messagebox_error"), "Najpierw wczytaj plik!")
@@ -468,7 +512,7 @@ class MainWindow:
             from ai_api.ai_handler import use_model
             predictions = use_model(all_ml_data)
             pred_bin = (predictions > 0.2).astype(int)
-            reverse_label_map = {0: "+", 1: "/", 2: "L", 3: "R", 4: "V"}
+            reverse_label_map = {0: "+", 1: "/", 2: "L", 3: "R", 4: "V", 5: "~"}
             added_count = 0
 
             # 3. ZAPIS WYNIKÓW (zamiast sztywnego "ML_WINDOW", dajemy faktyczny wynik AI)

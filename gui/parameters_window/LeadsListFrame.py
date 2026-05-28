@@ -1,7 +1,7 @@
 import tkinter as tk
 
 import localisation
-from gui.display_data.DisplayManager import DisplayManager
+from display_data import DisplayManager
 
 
 class LeadsListFrame(tk.Frame):

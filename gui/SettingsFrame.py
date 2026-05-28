@@ -3,8 +3,8 @@ from tkinter import messagebox
 
 import localisation
 from file_manager import FileManager, Annotation, EAnnotationType, EAnnotationOrigin
-from gui.display_data.DisplayManager import DisplayManager
-from gui.display_data.NavigationManager import NavigationManager
+from display_data import DisplayManager
+from display_data import NavigationManager
 from processor.preproc_manager import PreprocManager
 
 
@@ -128,7 +128,6 @@ class SettingsFrame(tk.Frame):
             self.on_next_annotation_callback()
 
     def _cmd_add_signal(self):
-        import os
 
         filename = "Nieznany"
         if self.file_manager.filepath:
