@@ -7,8 +7,8 @@ class HelpWindow(tk.Toplevel):
         super().__init__(master)
 
         self.title("Instrukcja obsługi i Pomoc")
-        self.geometry("700x550")
-        self.minsize(500, 400)
+        self.geometry("700x600")
+        self.minsize(500, 450)
 
         # Ustawiamy okno tak, by nie blokowało programu (użytkownik może czytać i klikać w tle)
         self.transient(master)
@@ -45,65 +45,51 @@ class HelpWindow(tk.Toplevel):
         self.text_box.tag_configure("bold", font=("Arial", 11, "bold"))
         self.text_box.tag_configure("bullet", lmargin1=20, lmargin2=35, spacing1=3)
 
-        # Wpisywanie treści
-        self._add_text("Krok 1: Rozpoczęcie pracy\n", "header")
-        self._add_text("Aby rozpocząć pracę z programem, musisz najpierw wczytać dane sygnału.\n")
-        self._add_text("1. Wybierz z górnego menu ", "bullet")
+        # Krok 1
+        self._add_text("Krok 1: Wczytywanie pliku i Nawigacja\n", "header")
+        self._add_text("Aby rozpocząć pracę, wybierz z górnego menu ")
         self._add_text("Plik -> Otwórz", "bold")
+        self._add_text(". Po wczytaniu pliku użyj dolnego panelu do poruszania się po sygnale:\n")
+        self._add_text("⏮ / ⏭ ", "bold")
+        self._add_text("- Przeskok na sam początek / koniec nagrania.\n", "bullet")
+        self._add_text("⏪ / ⏩ ", "bold")
+        self._add_text("- Skok do poprzedniej / następnej adnotacji. Strzałki nawigują po tej tabeli z prawego panelu, która była ostatnio używana.\n", "bullet")
+        self._add_text("◀ / ▶ ", "bold")
+        self._add_text("- Przesunięcie widoku okna w lewo / prawo.\n", "bullet")
+        self._add_text("▶ / ⏸ ", "bold")
+        self._add_text("- Automatyczne odtwarzanie (Play) i zatrzymywanie (Pauza) sygnału.\n", "bullet")
+        self._add_text("Możesz również wpisać konkretny czas w sekundach w polu po prawej i kliknąć 'Idź'.\n", "bullet")
+
+        # Krok 2
+        self._add_text("Krok 2: Ustawienia widoku (Parametry)\n", "header")
+        self._add_text("Możesz swobodnie przybliżać sygnał i zmieniać zakres widoku. Wybierz z menu ")
+        self._add_text("Analiza -> Parametry", "bold")
+        self._add_text(":\n")
+        self._add_text("• Rozmiar okna: ", "bold")
+        self._add_text("Zmienia ilość sekund aktualnie wyświetlanych na ekranie (oś X).\n", "bullet")
+        self._add_text("• Amplituda: ", "bold")
+        self._add_text("Zmienia zakres wykresu w pionie (oś Y). Pozwala to na przybliżenie sygnału.\n", "bullet")
+        self._add_text("Uwaga: Wykres automatycznie się przeskaluje zachowując proporcje medycznej siatki EKG!\n", "bullet")
+
+        # Krok 3
+        self._add_text("Krok 3: Analiza AI i Tabele Adnotacji\n", "header")
+        self._add_text("Panel po prawej stronie zawiera dwie tabele, które grupują wykryte zdarzenia.\n")
+        self._add_text("• Górna tabela (Adnotacje Czasowe): ", "bold")
+        self._add_text("Zwykłe znaczniki punktowe. Kliknięcie w nie narysuje czerwoną linię pionową w miejscu zdarzenia i wyczyści widma FFT.\n", "bullet")
+        self._add_text("• Dolna tabela (Adnotacje AI): ", "bold")
+        self._add_text("Aby je wygenerować, użyj menu ", "bullet")
+        self._add_text("Analiza -> Analiza dla całego pliku", "bold")
+        self._add_text(". Sztuczna inteligencja przeanalizuje sygnał i uzupełni dolną listę.\n")
+        self._add_text("Kliknięcie w adnotację z AI zaznaczy na niebiesko cały przedział sygnału i automatycznie wyświetli dla niego widmo częstotliwościowe (FFT).\n", "bullet")
+
+        # Krok 4
+        self._add_text("Krok 4: Zapisywanie zmian\n", "header")
+        self._add_text("Aby zachować wyniki, wybierz z górnego menu ")
+        self._add_text("Plik -> Zapisz", "bold")
+        self._add_text(" lub ")
+        self._add_text("Zapisz jako", "bold")
         self._add_text(".\n")
-        self._add_text("2. Wskaż obsługiwany plik na dysku komputera.\n", "bullet")
-        self._add_text(
-            "3. Po wczytaniu, na górnym pasku pojawią się informacje o pacjencie, a na środku wyrysują się wykresy EKG.\n",
-            "bullet")
-
-        self._add_text("Krok 2: Nawigacja po sygnale\n", "header")
-        self._add_text("Na dole ekranu znajduje się panel sterowania, który pozwala przemieszczać się po zapisie:\n")
-        self._add_text("⏮ ", "bold")
-        self._add_text("- Przeskok na sam początek nagrania.\n", "bullet")
-        self._add_text("⏪ ", "bold")
-        self._add_text("- Skok do poprzedniej wyfiltrowanej adnotacji (centruje ekran na pobudzeniu).\n", "bullet")
-        self._add_text("◀ ", "bold")
-        self._add_text("- Przesunięcie widoku o jedną klatkę w lewo.\n", "bullet")
-        self._add_text("▶ (Play/Pauza) ", "bold")
-        self._add_text("- Automatyczne, płynne odtwarzanie sygnału.\n", "bullet")
-        self._add_text("▶ (Klatka w prawo) ", "bold")
-        self._add_text("- Przesunięcie widoku o jedną klatkę w prawo.\n", "bullet")
-        self._add_text("⏩ ", "bold")
-        self._add_text("- Skok do następnej wyfiltrowanej adnotacji.\n", "bullet")
-        self._add_text("⏭ ", "bold")
-        self._add_text("- Przeskok na sam koniec nagrania.\n", "bullet")
-        self._add_text(
-            "Możesz również wpisać konkretny czas w okienku po prawej stronie i kliknąć 'Idź', aby natychmiast przeskoczyć w wybrane miejsce.\n",
-            "bullet")
-
-        self._add_text("Krok 3: Analiza EKG i Widmo FFT\n", "header")
-        self._add_text("Program pozwala na dynamiczną analizę wycinków sygnału:\n")
-        self._add_text("• Zaznaczanie myszką: ", "bold")
-        self._add_text(
-            "Kliknij i przeciągnij lewym przyciskiem myszy po wykresie EKG, aby zaznaczyć interesujący Cię obszar (podświetli się na niebiesko).\n",
-            "bullet")
-        self._add_text("• Widmo częstotliwościowe (FFT): ", "bold")
-        self._add_text(
-            "Jeśli analiza jest włączona (opcja dostępna w menu 'Analiza'), na dole automatycznie wyrysuje się widmo dla zaznaczonego fragmentu.\n",
-            "bullet")
-        self._add_text("• Pełna analiza: ", "bold")
-        self._add_text(
-            "Wybierz z górnego menu 'Analiza -> Analiza dla całego pliku', aby program wygenerował widmo dla całości zapisu w ułamku sekundy.\n",
-            "bullet")
-
-        self._add_text("Krok 4: Panel Adnotacji (Prawa strona)\n", "header")
-        self._add_text(
-            "Panel po prawej stronie wyświetla listę wykrytych pobudzeń (adnotacji) dla aktualnie widocznego okna.\n")
-        self._add_text("• Filtracja: ", "bold")
-        self._add_text("Użyj rozwijanej listy, aby pokazać tylko konkretny typ adnotacji (np. 'V').\n", "bullet")
-        self._add_text("• Wizualizacja na wykresie: ", "bold")
-        self._add_text(
-            "Wszystkie widoczne na liście adnotacje mają swoje małe zielone znaczniki na górnej krawędzi wykresu EKG.\n",
-            "bullet")
-        self._add_text("• Podświetlanie szczegółów: ", "bold")
-        self._add_text(
-            "Kliknięcie w dany wiersz na liście (lub użycie przycisków ⏪/⏩) narysuje czerwoną linię pionową na wykresie, dokładnie w miejscu wystąpienia tego zdarzenia.\n",
-            "bullet")
+        self._add_text("Plik zostanie zapisany na dysku. Będzie on zawierał wszystkie wygenerowane przez sztuczną inteligencję adnotacje, dzięki czemu nie musisz powtarzać analizy przy ponownym otwarciu pliku.\n", "bullet")
 
         # Zablokowanie edycji tekstu przez użytkownika
         self.text_box.config(state=tk.DISABLED)

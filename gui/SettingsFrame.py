@@ -29,7 +29,7 @@ class SettingsFrame(tk.Frame):
                                          command=self._cmd_prev_ann)
         self.move_left_button = tk.Button(btn_container, text="\u25C0", font=("Arial", 16), cursor="hand2",
                                           command=self._cmd_left)
-        self.play_pause_button = tk.Button(btn_container, text="\u25B6", font=("Arial", 16), cursor="hand2",
+        self.play_pause_button = tk.Button(btn_container, text="\u25B6 / \u23F8", font=("Arial", 16), cursor="hand2",
                                            command=self._cmd_play_pause)
         self.move_right_button = tk.Button(btn_container, text="\u25B6", font=("Arial", 16), cursor="hand2",
                                            command=self._cmd_right)
@@ -101,10 +101,7 @@ class SettingsFrame(tk.Frame):
         is_playing = self.navigation_manager.toggle_playback()
 
         if is_playing:
-            self.play_pause_button.config(text="\u23F8")  # Pauza
             self._playback_loop()
-        else:
-            self.play_pause_button.config(text="\u25B6")  # Play
 
     def _playback_loop(self):
         delay_ms = 50
@@ -116,8 +113,6 @@ class SettingsFrame(tk.Frame):
             if has_moved:
                 self.on_update_callback()
                 self.after(delay_ms, self._playback_loop)
-            else:
-                self.play_pause_button.config(text="\u25B6")
 
     def _cmd_prev_ann(self):
         if self.on_prev_annotation_callback:
