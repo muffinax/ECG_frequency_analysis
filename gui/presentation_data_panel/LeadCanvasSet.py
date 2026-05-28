@@ -23,7 +23,7 @@ class LeadCanvasSet(tk.Frame):
 
     def update_set_data(self, time_axis, amplitude_data, fft_data, overlap_sec=0.0, is_first=False,
                         is_last=False, analysis_start=-1.0, analysis_end=-1.0, analysis_overlap=0.0,
-                        is_analysis_active=False, annotation_times=None, highlighted_time=None, highlighted_duration=0.0):
+                        is_analysis_active=False, annotation_times=None, highlighted_time=None, highlighted_duration=0.0, y_scale=None):
 
         vis_start = analysis_start
         vis_end = analysis_end
@@ -53,7 +53,8 @@ class LeadCanvasSet(tk.Frame):
             analysis_overlap=analysis_overlap,
             annotation_times=annotation_times,
             highlighted_time=highlighted_time,
-            highlighted_duration=highlighted_duration
+            highlighted_duration=highlighted_duration,
+            y_scale=y_scale
         )
 
         if fft_data_to_pass is not None:

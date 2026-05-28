@@ -301,7 +301,8 @@ class MainWindow:
             is_last=self.navigation_manager.is_last_window(),
             annotation_times=annotation_times_to_draw,
             highlighted_time=chosen_time_sec,
-            highlighted_duration=chosen_duration_sec
+            highlighted_duration=chosen_duration_sec,
+            y_scale=self.navigation_manager.amplitude
         )
 
         current_time_str = self.navigation_manager.get_current_time_string()
