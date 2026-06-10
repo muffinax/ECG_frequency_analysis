@@ -13,7 +13,7 @@ from gui.SettingsFrame import SettingsFrame
 from gui.parameters_window.ParametersWindow import ParametersWindow
 from gui.HelpWindow import HelpWindow
 
-from file_manager import FileManager, Annotation, EAnnotationOrigin, EAnnotationType
+from file_manager import FileManager, Annotation, EAnnotationOrigin, EAnnotationType, file_manager
 import localisation
 from processor.preproc_manager import PreprocManager
 
@@ -513,35 +513,12 @@ class MainWindow:
 
             # MODEL
             from ai_api.ai_handler import use_model
-            predictions = use_model(all_ml_data)
-            pred_bin = (predictions > 0.2).astype(int)
-            reverse_label_map = {0: "+", 1: "/", 2: "L", 3: "R", 4: "V", 5: "~"}
+            annotations = use_model(all_ml_data, self.file_manager)
             added_count = 0
 
             # 3. ZAPIS WYNIKÓW (zamiast sztywnego "ML_WINDOW", dajemy faktyczny wynik AI)
-            for i, ml_data in enumerate(all_ml_data):
-                pred_row = pred_bin[i]
-                active_classes = [reverse_label_map[idx] for idx, val in enumerate(pred_row) if val == 1]
-
-                if not active_classes:
-                    continue
-
-                label_str = ",".join(active_classes)
-                sample_idx = int(ml_data.signal_sample_index_start * self.file_manager.sampling_frequency)
-                duration = int(ml_data.signal_duration * self.file_manager.sampling_frequency)
-                channel_name = getattr(ml_data, 'signal_name', lead)
-
-                new_ann = Annotation(
-                    sample_index=sample_idx,
-                    annotation_duration=duration,
-                    annotation_origin=EAnnotationOrigin.ANALYSIS,
-                    annotation_type=EAnnotationType.CUSTOM,
-                    auxiliary_note=f"Zidentyfikowano przez AI",
-                    channel=channel_name,
-                    custom_label=label_str
-                )
-
-                self.file_manager.add_annotation(new_ann)
+            for annotation in annotations:
+                self.file_manager.add_annotation(annotation)
                 added_count += 1
 
             self.update()
