@@ -51,7 +51,9 @@ class SettingsFrame(tk.Frame):
             command=self._cmd_go_time)
 
 
-        # self.add_annotation_button = tk.Button(btn_container, text="+ Add annotation", cursor="hand2", background="lightblue", command=None)
+        self.add_annotation_button = tk.Button(btn_container, text="+ Add annotation", cursor="hand2", background="lightblue", command=None)
+        self.add_del_all_button = tk.Button(btn_container, text="+ Add all annotations", cursor="hand2", background="lightblue", command=None)
+
         self.add_signal_button = tk.Button(btn_container, text="+ Add signal", cursor="hand2", background="lightblue", command=self._cmd_add_signal)
 
 
@@ -62,7 +64,9 @@ class SettingsFrame(tk.Frame):
         self.move_right_button.pack(side=tk.LEFT, padx=2)
         self.next_button.pack(side=tk.LEFT, padx=2)
         self.to_end_button.pack(side=tk.LEFT, padx=2)
-        # self.add_annotation_button.pack(side=tk.LEFT, padx=(10))
+
+        self.add_annotation_button.pack(side=tk.LEFT, padx=(10))
+        self.add_del_all_button.pack(side=tk.LEFT, padx=(10))
         # self.add_signal_button.pack(side=tk.LEFT)
 
         self.time_label.pack(side=tk.LEFT, padx=2)
