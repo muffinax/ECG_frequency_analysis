@@ -4,15 +4,27 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from ai_api.dataset_generator import folder_reader
+from file_manager import FileManager, Annotation, EAnnotationOrigin, EAnnotationType
 
 LABEL_MAP = {
     "+": 0,
     "/": 1,
     "L": 2,
     "R": 3,
-    "V": 4
+    "V": 4,
+    "~": 5
 }
-NUM_LABELS = 5
+
+IDX_TO_ANNOTATION = {
+    0: EAnnotationType.RHYTHM_CHANGE, # "+"
+    1: EAnnotationType.PACED_BEAT,  # "/"
+    2: EAnnotationType.LEFT_BUNDLE_BRANCH_BLOCK,  # "L"
+    3: EAnnotationType.RIGHT_BUNDLE_BRANCH_BLOCK,  # "R"
+    4: EAnnotationType.PREMATURE_VENTRICULAR_CONTRACTION,  # "V"
+    5: EAnnotationType.CHANGE_IN_SIGNAL_QUALITY,  # "~"
+}
+
+NUM_LABELS = 6
 
 def focal_loss(alpha=0.25, gamma=2.0):
     def loss(y_true, y_pred):
@@ -85,23 +97,45 @@ def preprocess_for_model(dataset):
 
     return np.array(x)
 
-def use_model(dataset):
+def predictions_to_annotations(y_pred, dataset, file_manager, threshold=0.2):
+    annotations = []
+
+    for i, data in enumerate(dataset):
+        probs = y_pred[i]
+        start_t = int(data.signal_sample_index_start * file_manager.sampling_frequency)
+        duration = int(data.signal_duration * file_manager.sampling_frequency)
+
+        for class_idx, p in enumerate(probs):
+
+            if p < threshold:
+                continue
+
+            annotation_type = IDX_TO_ANNOTATION.get(class_idx)
+
+            annotations.append(
+                Annotation(
+                    sample_index=start_t,
+                    annotation_duration=duration,
+
+                    annotation_origin=EAnnotationOrigin.ANALYSIS,
+
+                    annotation_type=annotation_type,
+
+                    auxiliary_note=f"conf={p:.3f}",
+
+                    channel=data.signal_name
+                )
+            )
+
+    return annotations
+
+def use_model(dataset, file_manager):
     model = load_keras_model()
 
     x = preprocess_for_model(dataset)
 
     pred = model.predict(x)
 
-    pred_bin = predict_threshold(pred, t=0.2)
+    annotations = predictions_to_annotations(pred, dataset, file_manager)
 
-    print(pred_bin)
-
-    return pred
-
-def main():
-    dataset = folder_reader("C:/Users/froma/OneDrive/Pulpit/mldata")
-
-    use_model(dataset)
-
-if __name__ == "__main__":
-    main()
+    return annotations
