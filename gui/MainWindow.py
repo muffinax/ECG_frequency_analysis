@@ -1,4 +1,5 @@
 import os
+import struct
 import sys
 import tkinter as tk
 import traceback
@@ -12,8 +13,9 @@ from gui.presentation_data_panel.ECGFrame import ECGFrame
 from gui.SettingsFrame import SettingsFrame
 from gui.parameters_window.ParametersWindow import ParametersWindow
 from gui.HelpWindow import HelpWindow
+from gui.AiAnnDTO import AiAnnDTO
 
-from file_manager import FileManager, Annotation, EAnnotationOrigin, EAnnotationType, file_manager
+from file_manager import FileManager, Annotation, EAnnotationOrigin, EAnnotationType
 import localisation
 from processor.preproc_manager import PreprocManager
 
@@ -250,7 +252,9 @@ class MainWindow:
 
         for ann in all_anns_in_window:
             if ann.annotation_origin == EAnnotationOrigin.ANALYSIS:
-                ml_annotations_in_window.append(ann)
+                if not hasattr(ann, 'is_saved'):
+                    ann.is_saved = True
+                ml_annotations_in_window.append(AiAnnDTO(annotation=ann, is_saved=ann.is_saved))
             else:
                 annotations_in_window.append(ann)
 
@@ -259,7 +263,9 @@ class MainWindow:
 
         for ann in self.file_manager.annotations:
             if ann.annotation_origin == EAnnotationOrigin.ANALYSIS:
-                all_ai_anns.append(ann)
+                if not hasattr(ann, 'is_saved'):
+                    ann.is_saved = True
+                all_ai_anns.append(AiAnnDTO(annotation=ann, is_saved=ann.is_saved))
             else:
                 all_time_anns.append(ann)
 
