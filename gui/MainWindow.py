@@ -14,6 +14,7 @@ from gui.SettingsFrame import SettingsFrame
 from gui.parameters_window.ParametersWindow import ParametersWindow
 from gui.HelpWindow import HelpWindow
 from gui.AiAnnDTO import AiAnnDTO
+# from gui.AnnotationEditWindow import AnnotationEditWindow
 
 from file_manager import FileManager, Annotation, EAnnotationOrigin, EAnnotationType
 import localisation
@@ -69,7 +70,8 @@ class MainWindow:
             on_update_callback=self.update,
             on_prev_annotation_callback=lambda: self.jump_annotation(-1),
             on_next_annotation_callback=lambda: self.jump_annotation(1),
-            height=80
+            # on_edit_annotation_callback=self.open_edit_annotation_window,
+            height=120
         )
         self.frame_buttons.pack_propagate(False)
         self.frame_buttons.pack(side=tk.BOTTOM, fill=tk.X)
@@ -174,6 +176,9 @@ class MainWindow:
 
                 self.chosen_annotation = -1
                 self.is_ai_active = False
+                self.frame_buttons.show_analysis_actions(False)
+                # self.frame_buttons.set_edit_button_state(False)
+
                 self.update_header_info()
                 self.update()
 
@@ -186,7 +191,20 @@ class MainWindow:
 
     def save_file(self) -> None:
         try:
+
+            annotations_to_save = []
+
+            for ann in self.file_manager.annotations:
+                if ann.annotation_origin == EAnnotationOrigin.ANALYSIS and getattr(ann, 'is_saved', True) == False:
+                    continue
+                annotations_to_save.append(ann)
+
+            #Changing annotations in filemanager for saving
+            original_annotations = self.file_manager.annotations
+            self.file_manager.annotations = annotations_to_save
             self.file_manager.save_file(self.file_manager.filepath)
+            self.file_manager.annotations = original_annotations
+
         except Exception as error_obj:
             messagebox.showerror(
                 title=localisation.name_resolver.get("messagebox_error"),
@@ -195,7 +213,19 @@ class MainWindow:
 
     def save_file_as(self) -> None:
         try:
+            annotations_to_save = []
+            for ann in self.file_manager.annotations:
+                if ann.annotation_origin == EAnnotationOrigin.ANALYSIS and getattr(ann, 'is_saved', True) == False:
+                    continue
+                annotations_to_save.append(ann)
+
+            original_annotations = self.file_manager.annotations
+            self.file_manager.annotations = annotations_to_save
+
             self.file_manager.save_file_system_gui()
+
+            self.file_manager.annotations = original_annotations
+
         except Exception as error_obj:
             messagebox.showerror(
                 title=localisation.name_resolver.get("messagebox_error"),
@@ -466,6 +496,11 @@ class MainWindow:
 
             self.is_ai_active = False
 
+        # if chosen_index != -1 and is_ai:
+        #     self.frame_buttons.set_edit_button_state(True)
+        # else:
+        #     self.frame_buttons.set_edit_button_state(False)
+
         self.update()
 
     def __show_help_window(self):
@@ -529,6 +564,8 @@ class MainWindow:
 
             self.update()
 
+            self.frame_buttons.show_analysis_actions(True)
+
             loading_window.destroy()
             messagebox.showinfo("Analiza zakończona", f"Wygenerowano adnotacji AI: {added_count}")
 
@@ -538,3 +575,22 @@ class MainWindow:
             traceback.print_exc()
             error_title = localisation.name_resolver.get("frame_annotationframe_table_label")
             messagebox.showerror("Błąd AI", f"{error_title}: {str(e)}")
+
+    # def open_edit_annotation_window(self):
+    #     if self.chosen_annotation == -1:
+    #         return
+    #
+    #     target_ann = None
+    #     for ann in self.file_manager.annotations:
+    #         is_ann_ai = (ann.annotation_origin == EAnnotationOrigin.ANALYSIS)
+    #         if ann.sample_index == self.chosen_annotation and is_ann_ai == self.is_ai_active:
+    #             target_ann = ann
+    #             break
+    #
+    #     if target_ann:
+    #         edit_window = AnnotationEditWindow(
+    #             master=self.master,
+    #             annotation=target_ann,
+    #             on_save_callback=self.update
+    #         )
+    #         self.master.wait_window(edit_window)
