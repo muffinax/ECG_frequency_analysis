@@ -23,6 +23,7 @@ class FileManager:
     def __init__(self) -> None:
         self.b_opened: bool = False
         self.filepath: str | None = None
+        self.save_as_filepath: str | None = None
         self.wfdb_record: Any | None = None
         self.wfdb_annotation: Any | None = None
         self.sampling_frequency: float = 0.0
@@ -51,6 +52,7 @@ class FileManager:
     def open_file(self, filepath: str) -> None:
         try:
             self.filepath = filepath
+            self.save_as_filepath = None;
             reader_instance: BaseECGReader = self._get_reader_for_file(filepath=filepath)
             reader_instance.read(filepath=filepath, file_manager=self)
 
@@ -278,6 +280,7 @@ class FileManager:
 
             if selected_filepath:
                 self.save_file(filepath=selected_filepath)
+                self.save_as_filepath = selected_filepath
 
         except Exception as exception_object:
             traceback.print_exc()

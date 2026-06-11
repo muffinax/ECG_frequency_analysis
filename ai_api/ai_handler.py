@@ -1,3 +1,5 @@
+import os
+import sys
 from pathlib import Path
 import tensorflow as tf
 import numpy as np
@@ -62,8 +64,8 @@ def build_dataset(dataset):
     return np.array(x)
 
 def load_keras_model():
-    base_dir = Path(__file__).resolve().parent
-    model_dir = base_dir.parent / "model"
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) if not getattr(sys, "frozen", False) else os.path.dirname(p=sys.executable)
+    model_dir = Path(os.path.join(base_dir, "resources", "model"))
 
     model_files = list(model_dir.glob("*.keras"))
 

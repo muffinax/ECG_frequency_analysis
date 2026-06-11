@@ -1,6 +1,13 @@
-import tkinter as tk
 import sys
 import os
+
+if getattr(sys, 'frozen', False):
+    sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    sys.stderr = sys.stdout
+
+
+import tkinter as tk
+import sys
 
 from gui.MainWindow import MainWindow
 

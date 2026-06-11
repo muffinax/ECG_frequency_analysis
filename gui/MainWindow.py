@@ -191,7 +191,6 @@ class MainWindow:
 
     def save_file(self) -> None:
         try:
-
             annotations_to_save = []
 
             for ann in self.file_manager.annotations:
@@ -202,7 +201,10 @@ class MainWindow:
             #Changing annotations in filemanager for saving
             original_annotations = self.file_manager.annotations
             self.file_manager.annotations = annotations_to_save
-            self.file_manager.save_file(self.file_manager.filepath)
+            if self.file_manager.save_as_filepath:
+                self.file_manager.save_file(self.file_manager.save_as_filepath)
+            else:
+                self.file_manager.save_file_system_gui()
             self.file_manager.annotations = original_annotations
 
         except Exception as error_obj:

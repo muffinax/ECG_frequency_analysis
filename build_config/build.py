@@ -12,7 +12,7 @@ if sys.platform != "win32":
 # =====================================================================
 # App specification
 APP_NAME: str = "ECG Analyzer"
-VERSION: str = "0.4.0"
+VERSION: str = "0.5.0"
 AUTHOR: str = "Marta Witkowska, Filip Romanowski, Aleksander Dziągwa, Kacper Bytner, Wojciech Biskup"
 DESCRIPTION: str = "ECG Frequency Analysis Tool"
 EXECUTABLE_NAME: str = "ecg_analyzer.exe"
@@ -29,16 +29,21 @@ RUNTIME_RESOURCES_DIR: str = os.path.join(ROOT_DIR, "resources")  # bundled reso
 
 # Build specification for .exe
 BUILD_EXE_OPTIONS: dict = {
-    "packages": ["tkinter"],
+    "packages": ["tkinter", "numpy", "scipy"],
     "include_files": [(RUNTIME_RESOURCES_DIR, "resources")] if os.path.exists(RUNTIME_RESOURCES_DIR) else [],
-    "excludes": [
-        "PyQt5", "PyQt6", "PySide2", "PySide6",
-        "setuptools", "wheel", "_distutils_hack", "pip",
-        "unittest", "curses", "xmlrpc",
-        "sqlite3",
-        "requests", "urllib3", "certifi", "idna", "charset_normalizer"
-    ],
-    "optimize": 2,
+    "excludes": ["tensorflow", "keras", "absl", "h5py", "tensorboard"],
+    # "excludes": [
+    #     "PyQt5", "PyQt6", "PySide2", "PySide6",
+    #     "unittest", "curses", "xmlrpc", "sqlite3"
+    # ],
+    # "excludes": [
+    #     "PyQt5", "PyQt6", "PySide2", "PySide6",
+    #     "setuptools", "wheel", "_distutils_hack", "pip",
+    #     "unittest", "curses", "xmlrpc",
+    #     "sqlite3",
+    #     "requests", "urllib3", "certifi", "idna", "charset_normalizer"
+    # ],
+    "optimize": 0,
     "build_exe": os.path.join(TARGET_BUILD_DIR, "build_win32")
 }
 
