@@ -1,14 +1,15 @@
 import tkinter as tk
 from tkinter import ttk
+import localisation
 
 
 class HelpWindow(tk.Toplevel):
     def __init__(self, master: tk.Widget) -> None:
         super().__init__(master)
 
-        self.title("Instrukcja obsługi i Pomoc")
-        self.geometry("700x600")
-        self.minsize(500, 450)
+        self.title(localisation.name_resolver.get("help_window_title"))
+        self.geometry("750x650")
+        self.minsize(550, 500)
 
         # Ustawiamy okno tak, by nie blokowało programu (użytkownik może czytać i klikać w tle)
         self.transient(master)
@@ -18,7 +19,7 @@ class HelpWindow(tk.Toplevel):
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Tytuł
-        lbl_title = tk.Label(main_frame, text="Przewodnik po aplikacji EKG", font=("Arial", 16, "bold"), bg="#ffffff")
+        lbl_title = tk.Label(main_frame, text=localisation.name_resolver.get("help_window_guide_title"), font=("Arial", 16, "bold"), bg="#ffffff")
         lbl_title.pack(pady=(0, 10))
 
         # Pole tekstowe z paskiem przewijania
@@ -34,7 +35,7 @@ class HelpWindow(tk.Toplevel):
         scrollbar.config(command=self.text_box.yview)
 
         # Przycisk Zamknij
-        btn_close = ttk.Button(main_frame, text="Zrozumiałem, zamknij", command=self.destroy)
+        btn_close = ttk.Button(main_frame, text=localisation.name_resolver.get("help_window_close_btn"), command=self.destroy)
         btn_close.pack(pady=(10, 0))
 
         self._insert_content()
@@ -46,52 +47,72 @@ class HelpWindow(tk.Toplevel):
         self.text_box.tag_configure("bullet", lmargin1=20, lmargin2=35, spacing1=3)
 
         # Krok 1
-        self._add_text("Krok 1: Wczytywanie pliku i Nawigacja\n", "header")
-        self._add_text("Aby rozpocząć pracę, wybierz z górnego menu ")
-        self._add_text("Plik -> Otwórz", "bold")
-        self._add_text(". Po wczytaniu pliku użyj dolnego panelu do poruszania się po sygnale:\n")
-        self._add_text("⏮ / ⏭ ", "bold")
-        self._add_text("- Przeskok na sam początek / koniec nagrania.\n", "bullet")
-        self._add_text("⏪ / ⏩ ", "bold")
-        self._add_text("- Skok do poprzedniej / następnej adnotacji. Strzałki nawigują po tej tabeli z prawego panelu, która była ostatnio używana.\n", "bullet")
-        self._add_text("◀ / ▶ ", "bold")
-        self._add_text("- Przesunięcie widoku okna w lewo / prawo.\n", "bullet")
-        self._add_text("▶ / ⏸ ", "bold")
-        self._add_text("- Automatyczne odtwarzanie (Play) i zatrzymywanie (Pauza) sygnału.\n", "bullet")
-        self._add_text("Możesz również wpisać konkretny czas w sekundach w polu po prawej i kliknąć 'Idź'.\n", "bullet")
+        self._add_text(localisation.name_resolver.get("help_window_step1_header"), "header")
+        self._add_text(localisation.name_resolver.get("help_window_step1_text1"))
+        self._add_text(localisation.name_resolver.get("help_window_step1_menu_path"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step1_text2"))
+
+        # Używamy tych samych kodów co w SettingsFrame
+        self._add_text("\u23EE / \u23ED ", "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step1_bullet1"), "bullet")
+
+        self._add_text("\u23EA / \u23E9 ", "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step1_bullet2"), "bullet")
+
+        self._add_text("\u25C0 / \u25B6 ", "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step1_bullet3"), "bullet")
+
+        self._add_text("\u25B6 / \u23F8 ", "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step1_bullet4"), "bullet")
+
+        self._add_text(localisation.name_resolver.get("help_window_step1_bullet5"), "bullet")
+        self._add_text(localisation.name_resolver.get("help_window_step1_zoom_lbl"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step1_zoom_text"), "bullet")
 
         # Krok 2
-        self._add_text("Krok 2: Ustawienia widoku (Parametry)\n", "header")
-        self._add_text("Możesz swobodnie przybliżać sygnał i zmieniać zakres widoku. Wybierz z menu ")
-        self._add_text("Analiza -> Parametry", "bold")
-        self._add_text(":\n")
-        self._add_text("• Rozmiar okna: ", "bold")
-        self._add_text("Zmienia ilość sekund aktualnie wyświetlanych na ekranie (oś X).\n", "bullet")
-        self._add_text("• Amplituda: ", "bold")
-        self._add_text("Zmienia zakres wykresu w pionie (oś Y). Pozwala to na przybliżenie sygnału.\n", "bullet")
-        self._add_text("Uwaga: Wykres automatycznie się przeskaluje zachowując proporcje medycznej siatki EKG!\n", "bullet")
+        self._add_text(localisation.name_resolver.get("help_window_step2_header"), "header")
+        self._add_text(localisation.name_resolver.get("help_window_step2_text1"))
+        self._add_text(localisation.name_resolver.get("help_window_step2_menu_path"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step2_text2"))
+        self._add_text(localisation.name_resolver.get("help_window_step2_bullet1_lbl"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step2_bullet1_text"), "bullet")
+        self._add_text(localisation.name_resolver.get("help_window_step2_bullet2_lbl"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step2_bullet2_text"), "bullet")
 
         # Krok 3
-        self._add_text("Krok 3: Analiza AI i Tabele Adnotacji\n", "header")
-        self._add_text("Panel po prawej stronie zawiera dwie tabele, które grupują wykryte zdarzenia.\n")
-        self._add_text("• Górna tabela (Adnotacje Czasowe): ", "bold")
-        self._add_text("Zwykłe znaczniki punktowe. Kliknięcie w nie narysuje czerwoną linię pionową w miejscu zdarzenia i wyczyści widma FFT.\n", "bullet")
-        self._add_text("• Dolna tabela (Adnotacje AI): ", "bold")
-        self._add_text("Aby je wygenerować, użyj menu ", "bullet")
-        self._add_text("Analiza -> Analiza dla całego pliku", "bold")
-        self._add_text(". Sztuczna inteligencja przeanalizuje sygnał i uzupełni dolną listę.\n")
-        self._add_text("Kliknięcie w adnotację z AI zaznaczy na niebiesko cały przedział sygnału i automatycznie wyświetli dla niego widmo częstotliwościowe (FFT).\n", "bullet")
+        self._add_text(localisation.name_resolver.get("help_window_step3_header"), "header")
+        self._add_text(localisation.name_resolver.get("help_window_step3_text1"))
+        self._add_text(localisation.name_resolver.get("help_window_step3_bullet1_lbl"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step3_bullet1_text"), "bullet")
 
-        # Krok 4
-        self._add_text("Krok 4: Zapisywanie zmian\n", "header")
-        self._add_text("Aby zachować wyniki, wybierz z górnego menu ")
-        self._add_text("Plik -> Zapisz", "bold")
-        self._add_text(" lub ")
-        self._add_text("Zapisz jako", "bold")
-        self._add_text(".\n")
-        self._add_text("Plik zostanie zapisany na dysku. Będzie on zawierał wszystkie wygenerowane przez sztuczną inteligencję adnotacje, dzięki czemu nie musisz powtarzać analizy przy ponownym otwarciu pliku.\n", "bullet")
+        self._add_text(localisation.name_resolver.get("help_window_step3_bullet2_lbl"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step3_bullet2_text1"), "bullet")
+        self._add_text(localisation.name_resolver.get("help_window_step3_menu_path"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step3_bullet2_text2"), "bullet")
 
-        # Zablokowanie edycji tekstu przez użytkownika
+        self._add_text(localisation.name_resolver.get("help_window_step3_fft_lbl"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step3_fft_text"), "bullet")
+
+        self._add_text(localisation.name_resolver.get("help_window_step3_action_lbl"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step3_action_text"), "bullet")
+
+        self._add_text(localisation.name_resolver.get("help_window_step3_extra_lbl"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step3_edit_lbl"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step3_edit_text"), "bullet")
+        self._add_text(localisation.name_resolver.get("help_window_step3_bulk_lbl"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step3_bulk_text"), "bullet")
+
+        self._add_text(localisation.name_resolver.get("help_window_step4_header"), "header")
+        self._add_text(localisation.name_resolver.get("help_window_step4_text1"))
+        self._add_text(localisation.name_resolver.get("help_window_step4_menu_save"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step4_text_or"))
+        self._add_text(localisation.name_resolver.get("help_window_step4_menu_save_as"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step4_text2"))
+
+        self._add_text(localisation.name_resolver.get("help_window_step4_bullet1"), "bullet")
+        self._add_text(localisation.name_resolver.get("help_window_step4_bullet2"), "bold")
+        self._add_text(localisation.name_resolver.get("help_window_step4_bullet3"))
+
         self.text_box.config(state=tk.DISABLED)
 
     def _add_text(self, text, tag=None):

@@ -6,7 +6,8 @@ from gui.presentation_data_panel.LeadCanvasSet import LeadCanvasSet
 
 
 class ECGFrame(tk.Frame):
-    def __init__(self, master, display_manager: DisplayManager, analysis_manager: AnalysisManager, on_update_callback=None, **kwargs):
+    def __init__(self, master, display_manager: DisplayManager, analysis_manager: AnalysisManager,
+                 on_update_callback=None, **kwargs):
         super().__init__(master, **kwargs)
         self.display_manager = display_manager
         self.analysis_manager = analysis_manager
@@ -36,15 +37,40 @@ class ECGFrame(tk.Frame):
             lambda e: self.bg_canvas.itemconfig(self.canvas_window, width=e.width)
         )
 
-        self.bg_canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.bind("<Enter>", self._bind_mouse_events)
+        self.bind("<Leave>", self._unbind_mouse_events)
 
-        self.bg_canvas.bind_all("<Control-MouseWheel>", self._on_zoom)  # Windows/MacOS
-        self.bg_canvas.bind_all("<Control-Button-4>", self._on_zoom)  # Linux (Scroll Up)
-        self.bg_canvas.bind_all("<Control-Button-5>", self._on_zoom)  # Linux (Scroll Down)
+    def _bind_mouse_events(self, event):
+        """Włącza scrollowanie tylko wtedy, gdy myszka jest nad wykresem EKG."""
+        # Zwykłe przewijanie
+        self.bg_canvas.bind_all("<MouseWheel>", self._on_mousewheel)  # Windows/Mac
+        self.bg_canvas.bind_all("<Button-4>", self._on_mousewheel)  # Linux (Up)
+        self.bg_canvas.bind_all("<Button-5>", self._on_mousewheel)  # Linux (Down)
+
+        # Zoomowanie (z Control)
+        self.bg_canvas.bind_all("<Control-MouseWheel>", self._on_zoom)
+        self.bg_canvas.bind_all("<Control-Button-4>", self._on_zoom)
+        self.bg_canvas.bind_all("<Control-Button-5>", self._on_zoom)
+
+    def _unbind_mouse_events(self, event):
+        """Wyłącza scrollowanie, gdy myszka ucieka z wykresu (naprawia tabele)."""
+        self.bg_canvas.unbind_all("<MouseWheel>")
+        self.bg_canvas.unbind_all("<Button-4>")
+        self.bg_canvas.unbind_all("<Button-5>")
+
+        self.bg_canvas.unbind_all("<Control-MouseWheel>")
+        self.bg_canvas.unbind_all("<Control-Button-4>")
+        self.bg_canvas.unbind_all("<Control-Button-5>")
 
     def _on_mousewheel(self, event):
-        # (Windows/Mac)
-        self.bg_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        # Linux
+        if hasattr(event, 'num') and event.num == 4:
+            self.bg_canvas.yview_scroll(-1, "units")
+        elif hasattr(event, 'num') and event.num == 5:
+            self.bg_canvas.yview_scroll(1, "units")
+        # Windows / Mac
+        elif hasattr(event, 'delta'):
+            self.bg_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def _rebuild_canvas_sets(self):
         for widget in self.scrollable_frame.winfo_children():

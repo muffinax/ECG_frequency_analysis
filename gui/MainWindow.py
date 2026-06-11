@@ -1,4 +1,5 @@
 import os
+import struct
 import sys
 import tkinter as tk
 import traceback
@@ -12,6 +13,8 @@ from gui.presentation_data_panel.ECGFrame import ECGFrame
 from gui.SettingsFrame import SettingsFrame
 from gui.parameters_window.ParametersWindow import ParametersWindow
 from gui.HelpWindow import HelpWindow
+from gui.AiAnnDTO import AiAnnDTO
+# from gui.AnnotationEditWindow import AnnotationEditWindow
 
 from file_manager import FileManager, Annotation, EAnnotationOrigin, EAnnotationType
 import localisation
@@ -67,7 +70,8 @@ class MainWindow:
             on_update_callback=self.update,
             on_prev_annotation_callback=lambda: self.jump_annotation(-1),
             on_next_annotation_callback=lambda: self.jump_annotation(1),
-            height=80
+            # on_edit_annotation_callback=self.open_edit_annotation_window,
+            height=120
         )
         self.frame_buttons.pack_propagate(False)
         self.frame_buttons.pack(side=tk.BOTTOM, fill=tk.X)
@@ -172,6 +176,9 @@ class MainWindow:
 
                 self.chosen_annotation = -1
                 self.is_ai_active = False
+                self.frame_buttons.show_analysis_actions(False)
+                # self.frame_buttons.set_edit_button_state(False)
+
                 self.update_header_info()
                 self.update()
 
@@ -184,7 +191,20 @@ class MainWindow:
 
     def save_file(self) -> None:
         try:
+
+            annotations_to_save = []
+
+            for ann in self.file_manager.annotations:
+                if ann.annotation_origin == EAnnotationOrigin.ANALYSIS and getattr(ann, 'is_saved', True) == False:
+                    continue
+                annotations_to_save.append(ann)
+
+            #Changing annotations in filemanager for saving
+            original_annotations = self.file_manager.annotations
+            self.file_manager.annotations = annotations_to_save
             self.file_manager.save_file(self.file_manager.filepath)
+            self.file_manager.annotations = original_annotations
+
         except Exception as error_obj:
             messagebox.showerror(
                 title=localisation.name_resolver.get("messagebox_error"),
@@ -193,7 +213,19 @@ class MainWindow:
 
     def save_file_as(self) -> None:
         try:
+            annotations_to_save = []
+            for ann in self.file_manager.annotations:
+                if ann.annotation_origin == EAnnotationOrigin.ANALYSIS and getattr(ann, 'is_saved', True) == False:
+                    continue
+                annotations_to_save.append(ann)
+
+            original_annotations = self.file_manager.annotations
+            self.file_manager.annotations = annotations_to_save
+
             self.file_manager.save_file_system_gui()
+
+            self.file_manager.annotations = original_annotations
+
         except Exception as error_obj:
             messagebox.showerror(
                 title=localisation.name_resolver.get("messagebox_error"),
@@ -250,7 +282,9 @@ class MainWindow:
 
         for ann in all_anns_in_window:
             if ann.annotation_origin == EAnnotationOrigin.ANALYSIS:
-                ml_annotations_in_window.append(ann)
+                if not hasattr(ann, 'is_saved'):
+                    ann.is_saved = True
+                ml_annotations_in_window.append(AiAnnDTO(annotation=ann, is_saved=ann.is_saved))
             else:
                 annotations_in_window.append(ann)
 
@@ -259,7 +293,9 @@ class MainWindow:
 
         for ann in self.file_manager.annotations:
             if ann.annotation_origin == EAnnotationOrigin.ANALYSIS:
-                all_ai_anns.append(ann)
+                if not hasattr(ann, 'is_saved'):
+                    ann.is_saved = True
+                all_ai_anns.append(AiAnnDTO(annotation=ann, is_saved=ann.is_saved))
             else:
                 all_time_anns.append(ann)
 
@@ -460,6 +496,11 @@ class MainWindow:
 
             self.is_ai_active = False
 
+        # if chosen_index != -1 and is_ai:
+        #     self.frame_buttons.set_edit_button_state(True)
+        # else:
+        #     self.frame_buttons.set_edit_button_state(False)
+
         self.update()
 
     def __show_help_window(self):
@@ -513,38 +554,17 @@ class MainWindow:
 
             # MODEL
             from ai_api.ai_handler import use_model
-            predictions = use_model(all_ml_data)
-            pred_bin = (predictions > 0.2).astype(int)
-            reverse_label_map = {0: "+", 1: "/", 2: "L", 3: "R", 4: "V", 5: "~"}
+            annotations = use_model(all_ml_data, self.file_manager)
             added_count = 0
 
             # 3. ZAPIS WYNIKÓW (zamiast sztywnego "ML_WINDOW", dajemy faktyczny wynik AI)
-            for i, ml_data in enumerate(all_ml_data):
-                pred_row = pred_bin[i]
-                active_classes = [reverse_label_map[idx] for idx, val in enumerate(pred_row) if val == 1]
-
-                if not active_classes:
-                    continue
-
-                label_str = ",".join(active_classes)
-                sample_idx = int(ml_data.signal_sample_index_start * self.file_manager.sampling_frequency)
-                duration = int(ml_data.signal_duration * self.file_manager.sampling_frequency)
-                channel_name = getattr(ml_data, 'signal_name', lead)
-
-                new_ann = Annotation(
-                    sample_index=sample_idx,
-                    annotation_duration=duration,
-                    annotation_origin=EAnnotationOrigin.ANALYSIS,
-                    annotation_type=EAnnotationType.CUSTOM,
-                    auxiliary_note=f"Zidentyfikowano przez AI",
-                    channel=channel_name,
-                    custom_label=label_str
-                )
-
-                self.file_manager.add_annotation(new_ann)
+            for annotation in annotations:
+                self.file_manager.add_annotation(annotation)
                 added_count += 1
 
             self.update()
+
+            self.frame_buttons.show_analysis_actions(True)
 
             loading_window.destroy()
             messagebox.showinfo("Analiza zakończona", f"Wygenerowano adnotacji AI: {added_count}")
@@ -555,3 +575,22 @@ class MainWindow:
             traceback.print_exc()
             error_title = localisation.name_resolver.get("frame_annotationframe_table_label")
             messagebox.showerror("Błąd AI", f"{error_title}: {str(e)}")
+
+    # def open_edit_annotation_window(self):
+    #     if self.chosen_annotation == -1:
+    #         return
+    #
+    #     target_ann = None
+    #     for ann in self.file_manager.annotations:
+    #         is_ann_ai = (ann.annotation_origin == EAnnotationOrigin.ANALYSIS)
+    #         if ann.sample_index == self.chosen_annotation and is_ann_ai == self.is_ai_active:
+    #             target_ann = ann
+    #             break
+    #
+    #     if target_ann:
+    #         edit_window = AnnotationEditWindow(
+    #             master=self.master,
+    #             annotation=target_ann,
+    #             on_save_callback=self.update
+    #         )
+    #         self.master.wait_window(edit_window)

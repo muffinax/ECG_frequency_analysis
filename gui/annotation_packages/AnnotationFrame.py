@@ -5,6 +5,7 @@ import file_manager
 import localisation
 from gui.annotation_packages.AnnotationTime import AnnotationTime
 from gui.annotation_packages.AnnotationFFT import AnnotationFFT
+from gui.AiAnnDTO import AiAnnDTO
 
 
 class AnnotationFrame(tk.Frame):
@@ -55,7 +56,7 @@ class AnnotationFrame(tk.Frame):
         self._time_annotations = []
 
         self._last_ml_annotations_ref = None
-        self._ml_annotations = []
+        self._ml_annotations: list[AiAnnDTO] = []
 
     def _on_table_clicked(self, chosen_index: int, source: str):
         """Synchronized blue frame and flag passing"""
@@ -75,8 +76,8 @@ class AnnotationFrame(tk.Frame):
         if self.on_annotation_click_callback:
             self.on_annotation_click_callback(chosen_index, is_ai)
 
-    def update_data(self, time_annotations: list[file_manager.Annotation], ml_annotations: list[file_manager.Annotation],
-                    window_ml_annotations: list[file_manager.Annotation], window_annotations: list[file_manager.Annotation],
+    def update_data(self, time_annotations: list[file_manager.Annotation], ml_annotations: list[AiAnnDTO],
+                    window_ml_annotations: list[AiAnnDTO], window_annotations: list[file_manager.Annotation],
                     sample_rate: float) -> None:
 
         self._time_annotations = time_annotations
@@ -103,9 +104,8 @@ class AnnotationFrame(tk.Frame):
             for ann in self._time_annotations:
                 unique_types.add(ann.annotation_type.to_string())
 
-            # Pobieranie typów z adnotacji AI (teraz to zwykłe obiekty Annotation!)
-            for ann in self._ml_annotations:
-                unique_types.add(ann.annotation_type.to_string())
+            for dto in self._ml_annotations:
+                unique_types.add(dto.annotation.annotation_type.to_string())
 
             # New List of filters added to combobox
             combobox_values = [self.atList.filter_all_text] + sorted(list(unique_types))

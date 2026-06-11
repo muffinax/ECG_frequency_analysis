@@ -4,7 +4,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from ai_api.dataset_generator import folder_reader
-from file_manager import Annotation, EAnnotationOrigin, EAnnotationType
+from file_manager import FileManager, Annotation, EAnnotationOrigin, EAnnotationType
 
 LABEL_MAP = {
     "+": 0,
@@ -97,14 +97,13 @@ def preprocess_for_model(dataset):
 
     return np.array(x)
 
-def predictions_to_annotations(y_pred, dataset, threshold=0.2):
+def predictions_to_annotations(y_pred, dataset, file_manager, threshold=0.2):
     annotations = []
 
     for i, data in enumerate(dataset):
         probs = y_pred[i]
-
-        start_t = data.signal_sample_index_start
-        duration = data.signal_duration
+        start_t = int(data.signal_sample_index_start * file_manager.sampling_frequency)
+        duration = int(data.signal_duration * file_manager.sampling_frequency)
 
         for class_idx, p in enumerate(probs):
 
@@ -130,21 +129,13 @@ def predictions_to_annotations(y_pred, dataset, threshold=0.2):
 
     return annotations
 
-def use_model(dataset):
+def use_model(dataset, file_manager):
     model = load_keras_model()
 
     x = preprocess_for_model(dataset)
 
     pred = model.predict(x)
 
-    annotations = predictions_to_annotations(pred, dataset)
+    annotations = predictions_to_annotations(pred, dataset, file_manager)
 
     return annotations
-
-def main():
-    dataset = folder_reader("C:/Users/froma/OneDrive/Pulpit/mldata")
-
-    use_model(dataset)
-
-if __name__ == "__main__":
-    main()

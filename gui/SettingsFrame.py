@@ -19,12 +19,14 @@ class SettingsFrame(tk.Frame):
         self.on_update_callback = on_update_callback
         self.on_prev_annotation_callback = on_prev_annotation_callback
         self.on_next_annotation_callback = on_next_annotation_callback
+        # self.on_edit_annotation_callback = on_edit_annotation_callback
 
-        btn_container=tk.Frame(self, bg=self['bg'])
-        btn_container.pack(expand=True)
+        # TIME BUTTONS
+        btn_container = tk.Frame(self, bg=self['bg'])
+        btn_container.pack(side=tk.TOP, pady=(5, 2))
 
         self.to_start_button = tk.Button(btn_container, text="\u23EE", font=("Arial", 16), cursor="hand2",
-                                        command=self._cmd_start)
+                                         command=self._cmd_start)
         self.previous_button = tk.Button(btn_container, text="\u23EA", font=("Arial", 16), cursor="hand2",
                                          command=self._cmd_prev_ann)
         self.move_left_button = tk.Button(btn_container, text="\u25C0", font=("Arial", 16), cursor="hand2",
@@ -38,10 +40,20 @@ class SettingsFrame(tk.Frame):
         self.to_end_button = tk.Button(btn_container, text="\u23ED", font=("Arial", 16), cursor="hand2",
                                        command=self._cmd_end)
 
-        time_container = tk.Frame(self, bg=self['bg'])
-        time_container.pack(expand=True)
+        self.to_start_button.pack(side=tk.LEFT, padx=2)
+        self.previous_button.pack(side=tk.LEFT, padx=2)
+        self.move_left_button.pack(side=tk.LEFT, padx=2)
+        self.play_pause_button.pack(side=tk.LEFT, padx=2)
+        self.move_right_button.pack(side=tk.LEFT, padx=2)
+        self.next_button.pack(side=tk.LEFT, padx=2)
+        self.to_end_button.pack(side=tk.LEFT, padx=2)
 
-        self.time_label = tk.Label(time_container, text=localisation.name_resolver.get("parameters_window_time_label"), font=('calibre', 10, 'normal'))
+        # TIME JUMP BUTTONS
+        time_container = tk.Frame(self, bg=self['bg'])
+        time_container.pack(side=tk.TOP, pady=2)
+
+        self.time_label = tk.Label(time_container, text=localisation.name_resolver.get("parameters_window_time_label"),
+                                   font=('calibre', 10, 'normal'))
         self.time_entry = tk.Entry(time_container, width=8, justify=tk.CENTER, font=('calibre', 10, 'normal'))
         self.time_go_button = tk.Button(
             time_container,
@@ -50,24 +62,44 @@ class SettingsFrame(tk.Frame):
             cursor="hand2",
             command=self._cmd_go_time)
 
-
-        # self.add_annotation_button = tk.Button(btn_container, text="+ Add annotation", cursor="hand2", background="lightblue", command=None)
-        self.add_signal_button = tk.Button(btn_container, text="+ Add signal", cursor="hand2", background="lightblue", command=self._cmd_add_signal)
-
-
-        self.to_start_button.pack(side=tk.LEFT, padx=2)
-        self.previous_button.pack(side=tk.LEFT, padx=2)
-        self.move_left_button.pack(side=tk.LEFT, padx=2)
-        self.play_pause_button.pack(side=tk.LEFT, padx=2)
-        self.move_right_button.pack(side=tk.LEFT, padx=2)
-        self.next_button.pack(side=tk.LEFT, padx=2)
-        self.to_end_button.pack(side=tk.LEFT, padx=2)
-        # self.add_annotation_button.pack(side=tk.LEFT, padx=(10))
-        # self.add_signal_button.pack(side=tk.LEFT)
-
         self.time_label.pack(side=tk.LEFT, padx=2)
         self.time_entry.pack(side=tk.LEFT, padx=2)
         self.time_go_button.pack(side=tk.LEFT, padx=2)
+
+        # ANNOTATION BUTTONS
+        self.action_container = tk.Frame(self, bg=self['bg'])
+        self.action_container.pack(side=tk.TOP, pady=(2, 5))
+
+        # Edit button
+        # self.edit_annotation_button = tk.Button(
+        #     self.action_container,
+        #     text="Edytuj",
+        #     cursor="hand2",
+        #     background="lightblue",
+        #     state=tk.DISABLED,
+        #     command=self.on_edit_annotation_callback
+        # )
+
+        self.add_all_button = tk.Button(
+            self.action_container,
+            text="+ Add all annotations",
+            cursor="hand2",
+            background="lightgreen",
+            command=self._cmd_add_all_annotations
+        )
+
+        self.del_all_button = tk.Button(
+            self.action_container,
+            text="- Del all annotations",
+            cursor="hand2",
+            background="lightcoral",
+            command=self._cmd_del_all_annotations
+        )
+
+        self.add_signal_button = tk.Button(self.action_container, text="+ Add signal", cursor="hand2",
+                                           background="lightblue", command=self._cmd_add_signal)
+
+        # self.edit_annotation_button.pack(side=tk.LEFT, padx=10)
 
     def _cmd_start(self):
         self.navigation_manager.jump_to_start()
@@ -156,3 +188,39 @@ class SettingsFrame(tk.Frame):
             self.add_signal_button.pack(side=tk.LEFT)
         else:
             self.add_signal_button.pack_forget()
+
+    def show_analysis_actions(self, show: bool = True):
+        """Odkrywa lub ukrywa przyciski dodawania/usuwania wszystkich adnotacji AI."""
+        if show:
+            self.add_all_button.pack(side=tk.LEFT, padx=5)
+            self.del_all_button.pack(side=tk.LEFT, padx=5)
+        else:
+            self.add_all_button.pack_forget()
+            self.del_all_button.pack_forget()
+
+    # def set_edit_button_state(self, is_active: bool):
+    #     """Włącza lub wyłącza przycisk edycji pojedynczej adnotacji."""
+    #     if is_active:
+    #         self.edit_annotation_button.config(state=tk.NORMAL)
+    #     else:
+    #         self.edit_annotation_button.config(state=tk.DISABLED)
+
+    def _cmd_add_all_annotations(self):
+        if not self.file_manager.annotations:
+            return
+
+        for ann in self.file_manager.annotations:
+            if ann.annotation_origin == EAnnotationOrigin.ANALYSIS:
+                ann.is_saved = True
+
+        self.on_update_callback()
+
+    def _cmd_del_all_annotations(self):
+        if not self.file_manager.annotations:
+            return
+
+        for ann in self.file_manager.annotations:
+            if ann.annotation_origin == EAnnotationOrigin.ANALYSIS:
+                ann.is_saved = False
+
+        self.on_update_callback()
